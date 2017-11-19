@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.4.0">
+<eagle version="7.7.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -1761,26 +1761,26 @@ Standard 8-pin 0.1" header. Use with straight break away headers (SKU : PRT-0011
 <part name="U8" library="SparkFun-Sensors" deviceset="QRE1113" device="SMD-W"/>
 <part name="U9" library="SparkFun-Sensors" deviceset="QRE1113" device="SMD-W"/>
 <part name="U10" library="SparkFun-Sensors" deviceset="QRE1113" device="SMD-W"/>
-<part name="R1" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R2" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R3" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R4" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R5" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R6" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R7" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R8" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R9" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R10" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R11" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R12" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R13" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R14" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R15" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R16" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R17" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R18" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R19" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
-<part name="R20" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value=" "/>
+<part name="R1" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R2" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R3" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R4" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R5" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R6" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R7" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R8" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R9" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R10" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R11" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R12" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R13" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R14" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R15" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R16" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R17" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R18" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
+<part name="R19" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="330"/>
+<part name="R20" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="36K"/>
 <part name="P+1" library="supply1" deviceset="VCC" device=""/>
 <part name="P+2" library="supply1" deviceset="VCC" device=""/>
 <part name="P+3" library="supply1" deviceset="VCC" device=""/>
@@ -1811,6 +1811,11 @@ Standard 8-pin 0.1" header. Use with straight break away headers (SKU : PRT-0011
 <part name="J1" library="SparkFun-Connectors" deviceset="M08" device=""/>
 <part name="SUPPLY13" library="supply2" deviceset="GND" device=""/>
 <part name="P+13" library="supply1" deviceset="VCC" device=""/>
+<part name="R22" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="0"/>
+<part name="R23" library="SparkFun-Resistors" deviceset="RESISTOR" device="0805" value="0"/>
+<part name="C2" library="SparkFun-Capacitors" deviceset="1.0UF" device="-0805-25V-(+80/-20%)" value="10uF"/>
+<part name="P+14" library="supply1" deviceset="VCC" device=""/>
+<part name="SUPPLY14" library="supply2" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -1877,6 +1882,11 @@ Standard 8-pin 0.1" header. Use with straight break away headers (SKU : PRT-0011
 <instance part="J1" gate="G$1" x="218.44" y="48.26" rot="R180"/>
 <instance part="SUPPLY13" gate="GND" x="208.28" y="33.02"/>
 <instance part="P+13" gate="VCC" x="210.82" y="60.96"/>
+<instance part="R22" gate="G$1" x="195.58" y="76.2" rot="R270"/>
+<instance part="R23" gate="G$1" x="203.2" y="76.2" rot="R270"/>
+<instance part="C2" gate="G$1" x="231.14" y="25.4"/>
+<instance part="P+14" gate="VCC" x="231.14" y="35.56"/>
+<instance part="SUPPLY14" gate="GND" x="231.14" y="17.78"/>
 </instances>
 <busses>
 </busses>
@@ -1987,6 +1997,24 @@ Standard 8-pin 0.1" header. Use with straight break away headers (SKU : PRT-0011
 <pinref part="P+11" gate="VCC" pin="VCC"/>
 <wire x1="170.18" y1="68.58" x2="182.88" y2="68.58" width="0.1524" layer="91"/>
 <wire x1="182.88" y1="68.58" x2="182.88" y2="71.12" width="0.1524" layer="91"/>
+<pinref part="R23" gate="G$1" pin="2"/>
+<wire x1="203.2" y1="71.12" x2="203.2" y2="68.58" width="0.1524" layer="91"/>
+<wire x1="203.2" y1="68.58" x2="195.58" y2="68.58" width="0.1524" layer="91"/>
+<junction x="182.88" y="68.58"/>
+<pinref part="R22" gate="G$1" pin="2"/>
+<wire x1="195.58" y1="68.58" x2="190.5" y2="68.58" width="0.1524" layer="91"/>
+<wire x1="190.5" y1="68.58" x2="182.88" y2="68.58" width="0.1524" layer="91"/>
+<wire x1="195.58" y1="71.12" x2="195.58" y2="68.58" width="0.1524" layer="91"/>
+<junction x="195.58" y="68.58"/>
+<pinref part="R23" gate="G$1" pin="1"/>
+<wire x1="203.2" y1="81.28" x2="203.2" y2="83.82" width="0.1524" layer="91"/>
+<wire x1="203.2" y1="83.82" x2="195.58" y2="83.82" width="0.1524" layer="91"/>
+<wire x1="195.58" y1="83.82" x2="190.5" y2="83.82" width="0.1524" layer="91"/>
+<wire x1="190.5" y1="83.82" x2="190.5" y2="68.58" width="0.1524" layer="91"/>
+<junction x="190.5" y="68.58"/>
+<pinref part="R22" gate="G$1" pin="1"/>
+<wire x1="195.58" y1="81.28" x2="195.58" y2="83.82" width="0.1524" layer="91"/>
+<junction x="195.58" y="83.82"/>
 </segment>
 <segment>
 <pinref part="P+12" gate="VCC" pin="VCC"/>
@@ -1998,6 +2026,11 @@ Standard 8-pin 0.1" header. Use with straight break away headers (SKU : PRT-0011
 <pinref part="J1" gate="G$1" pin="3"/>
 <wire x1="210.82" y1="58.42" x2="210.82" y2="50.8" width="0.1524" layer="91"/>
 <wire x1="210.82" y1="50.8" x2="213.36" y2="50.8" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="C2" gate="G$1" pin="1"/>
+<pinref part="P+14" gate="VCC" pin="VCC"/>
+<wire x1="231.14" y1="30.48" x2="231.14" y2="33.02" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$1" class="0">
@@ -2366,6 +2399,11 @@ Standard 8-pin 0.1" header. Use with straight break away headers (SKU : PRT-0011
 <pinref part="J1" gate="G$1" pin="6"/>
 <wire x1="213.36" y1="43.18" x2="208.28" y2="43.18" width="0.1524" layer="91"/>
 <junction x="208.28" y="43.18"/>
+</segment>
+<segment>
+<pinref part="SUPPLY14" gate="GND" pin="GND"/>
+<pinref part="C2" gate="G$1" pin="2"/>
+<wire x1="231.14" y1="20.32" x2="231.14" y2="22.86" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$4" class="0">
