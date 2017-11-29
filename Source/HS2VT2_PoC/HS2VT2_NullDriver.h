@@ -1,3 +1,6 @@
+#ifndef HS2VT2_NullDriver_H
+#define HS2VT2_NullDriver_H
+
 class HS2VT2_NullDriver: public HS2VT2_ModeDriver {
   public:
     HS2VT2_NullDriver(uint32_t mode_id);
@@ -9,3 +12,5 @@ class HS2VT2_NullDriver: public HS2VT2_ModeDriver {
     void on_mode_entry();
     void on_mode_exit();
 };
+
+#endif
