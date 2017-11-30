@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "I32CTT.h"
+#include <Arduino.h>
 
 I32CTT_ModeDriver::I32CTT_ModeDriver(uint32_t mode_id) {
   this->mode_id = mode_id;
@@ -30,6 +31,7 @@ void I32CTT_Controller::init() {
   if(this->interface) {
     this->interface->init();
   }
+  Serial.println("Machine started...");
 }
 
 void I32CTT_Controller::run() {
@@ -37,6 +39,7 @@ void I32CTT_Controller::run() {
   if(this->interface != 0) {
     this->interface->update();
     if(this->interface->available()) {
+      Serial.println("Data available");
       this->parse(this->interface->tx_buffer, this->interface->tx_size);
     }
   }
@@ -138,6 +141,9 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
 
   uint8_t cmd = buffer[0]>>1;
   uint8_t ping = buffer[0]&0x01;
+
+  Serial.print(cmd, HEX);
+  Serial.print("\r\n");
 
   if(!valid_size(cmd, buffsize)) // return if size invalid
     return;
