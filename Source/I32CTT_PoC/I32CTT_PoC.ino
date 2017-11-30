@@ -1,11 +1,11 @@
-#include "HS2VT2.h"
-#include "HS2VT2_NullDriver.h"
-#include "HS2VT2_NullInterface.h"
+#include "I32CTT.h"
+#include "I32CTT_NullDriver.h"
+#include "I32CTT_NullInterface.h"
 
-HS2VT2_Controller controller;
+I32CTT_Controller controller;
 
-HS2VT2_NullInterface myInterface;
-HS2VT2_NullDriver myDriver(0x99999999);
+I32CTT_NullInterface myInterface;
+I32CTT_NullDriver myDriver(0x99999999);
 
 void setup() {
   controller.set_interface(myInterface);

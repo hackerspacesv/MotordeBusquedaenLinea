@@ -1,7 +1,7 @@
-#ifndef HS2VT2_H
-#define HS2VT2_H
+#ifndef I32CTT_H
+#define I32CTT_H
 
-#define HS2VT2_MAX_MAC_PHY 102
+#define I32CTT_MAX_MAC_PHY 102
 #define MAX_MODE_COUNT 64
 
 enum CMD_t {
@@ -11,11 +11,11 @@ enum CMD_t {
   CMD_AW = 4
 };
 
-class HS2VT2_Interface {
+class I32CTT_Interface {
   public:
-    uint8_t rx_buffer[HS2VT2_MAX_MAC_PHY];
+    uint8_t rx_buffer[I32CTT_MAX_MAC_PHY];
     uint8_t rx_size;
-    uint8_t tx_buffer[HS2VT2_MAX_MAC_PHY];
+    uint8_t tx_buffer[I32CTT_MAX_MAC_PHY];
     uint8_t tx_size;
     virtual void init()=0;
     virtual void update()=0;
@@ -23,9 +23,9 @@ class HS2VT2_Interface {
     virtual void send()=0;
 };
 
-class HS2VT2_ModeDriver {
+class I32CTT_ModeDriver {
   public:
-    HS2VT2_ModeDriver(uint32_t mode_id);
+    I32CTT_ModeDriver(uint32_t mode_id);
     virtual uint32_t read(uint8_t addr)=0;
     virtual uint8_t write(uint8_t addr, uint32_t data)=0;
     virtual void h_answer_read(uint8_t addr, uint32_t data)=0;
@@ -37,11 +37,11 @@ class HS2VT2_ModeDriver {
     uint32_t mode_id;
 };
 
-class HS2VT2_Controller {
+class I32CTT_Controller {
   public:
-    HS2VT2_Controller();
-    uint8_t set_interface(HS2VT2_Interface &iface);
-    uint8_t add_mode_driver(HS2VT2_ModeDriver &drv);
+    I32CTT_Controller();
+    uint8_t set_interface(I32CTT_Interface &iface);
+    uint8_t add_mode_driver(I32CTT_ModeDriver &drv);
     void init();
     void run();
   private:
@@ -52,8 +52,8 @@ class HS2VT2_Controller {
     uint32_t get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     void put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type, uint8_t pos);
     void put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos);
-    HS2VT2_ModeDriver *drivers[MAX_MODE_COUNT];
-    HS2VT2_Interface *interface;
+    I32CTT_ModeDriver *drivers[MAX_MODE_COUNT];
+    I32CTT_Interface *interface;
     uint8_t mode_counter;
     uint8_t current_mode;
 };

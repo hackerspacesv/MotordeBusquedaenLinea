@@ -1,23 +1,23 @@
 #include <stdint.h>
 #include <string.h>
-#include "HS2VT2.h"
+#include "I32CTT.h"
 
-HS2VT2_ModeDriver::HS2VT2_ModeDriver(uint32_t mode_id) {
+I32CTT_ModeDriver::I32CTT_ModeDriver(uint32_t mode_id) {
   this->mode_id = mode_id;
 }
 
-HS2VT2_Controller::HS2VT2_Controller() {
+I32CTT_Controller::I32CTT_Controller() {
   this->interface = 0;
   this->mode_counter = 0;
   this->current_mode = 0;
 }
 
-uint8_t HS2VT2_Controller::set_interface(HS2VT2_Interface &iface) {
+uint8_t I32CTT_Controller::set_interface(I32CTT_Interface &iface) {
   this->interface = &iface;
   return 0;
 }
 
-uint8_t HS2VT2_Controller::add_mode_driver(HS2VT2_ModeDriver &drv) {
+uint8_t I32CTT_Controller::add_mode_driver(I32CTT_ModeDriver &drv) {
   uint8_t result = 0;
   if(this->mode_counter<MAX_MODE_COUNT) {
     this->drivers[this->mode_counter++] = &drv;
@@ -26,13 +26,13 @@ uint8_t HS2VT2_Controller::add_mode_driver(HS2VT2_ModeDriver &drv) {
   return result;
 }
 
-void HS2VT2_Controller::init() {
+void I32CTT_Controller::init() {
   if(this->interface) {
     this->interface->init();
   }
 }
 
-void HS2VT2_Controller::run() {
+void I32CTT_Controller::run() {
   // Look for network events
   if(this->interface != 0) {
     this->interface->update();
@@ -46,7 +46,7 @@ void HS2VT2_Controller::run() {
   }
 }
 
-uint8_t HS2VT2_Controller::valid_size(uint8_t cmd_type, uint8_t buffsize) {
+uint8_t I32CTT_Controller::valid_size(uint8_t cmd_type, uint8_t buffsize) {
   uint8_t result = 0;
   
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
@@ -60,7 +60,7 @@ uint8_t HS2VT2_Controller::valid_size(uint8_t cmd_type, uint8_t buffsize) {
   return result;
 }
 
-uint8_t HS2VT2_Controller::reg_count(uint8_t cmd_type, uint8_t buffsize) {
+uint8_t I32CTT_Controller::reg_count(uint8_t cmd_type, uint8_t buffsize) {
   uint8_t result = 0;
   
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
@@ -74,7 +74,7 @@ uint8_t HS2VT2_Controller::reg_count(uint8_t cmd_type, uint8_t buffsize) {
   return result;
 }
 
-uint32_t HS2VT2_Controller::get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
+uint32_t I32CTT_Controller::get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
   uint32_t result = 0;
   uint8_t offset = 0;
   
@@ -91,7 +91,7 @@ uint32_t HS2VT2_Controller::get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t p
   return result;
 }
 
-uint32_t HS2VT2_Controller::get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
+uint32_t I32CTT_Controller::get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
   uint32_t result = 0;
   uint8_t offset = 0;
   
@@ -106,7 +106,7 @@ uint32_t HS2VT2_Controller::get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t 
   return result;
 }
 
-void HS2VT2_Controller::put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type, uint8_t pos) {
+void I32CTT_Controller::put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type, uint8_t pos) {
   uint8_t offset = 0;
   
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
@@ -120,7 +120,7 @@ void HS2VT2_Controller::put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type,
   memcpy(buffer+offset, &reg, sizeof(uint32_t));
 }
 
-void HS2VT2_Controller::put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos) {
+void I32CTT_Controller::put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos) {
   uint8_t offset = 0;
   
   if (cmd_type == CMD_W || cmd_type == CMD_AR) {
@@ -132,7 +132,7 @@ void HS2VT2_Controller::put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_typ
   memcpy(buffer+offset, &data, sizeof(uint32_t));
 }
 
-void HS2VT2_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
+void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
   if(buffsize==0) // Should never happend. But here just in case.
     return;
 
@@ -145,7 +145,7 @@ void HS2VT2_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
   uint8_t records = reg_count(cmd, buffsize);
 
   if((this->interface != 0) && (this->drivers[this->current_mode] !=  0)) {
-    HS2VT2_ModeDriver *driver = this->drivers[this->current_mode];
+    I32CTT_ModeDriver *driver = this->drivers[this->current_mode];
     switch(cmd) {
       case CMD_R:
         this->interface->tx_size = buffsize+records*4;
