@@ -27,11 +27,11 @@
 #include "I32CTT_NullDriver.h"
 #include "I32CTT_ArduinoStreamInterface.h"
 
-I32CTT_Controller controller(16);
+I32CTT_Controller controller(8);
 
 //I32CTT_NullInterface myInterface;
 I32CTT_ArduinoStreamInterface serialInterface(Serial);
-I32CTT_NullDriver myDriver(1);
+I32CTT_NullDriver myDriver(I32CTT_ModeDriver::str2name("NUL"));
 
 void setup() {
   while(!Serial);
@@ -41,7 +41,6 @@ void setup() {
   controller.init();
   Serial.println("Running...");
 }
-
 void loop() {
   // put your main code here, to run repeatedly:
   controller.run();

@@ -23,8 +23,8 @@ class I32CTT_NullDriver: public I32CTT_ModeDriver {
   public:
     I32CTT_NullDriver(uint32_t mode_id);
     void init();
-    uint32_t read(uint8_t addr);
-    uint8_t write(uint8_t addr, uint32_t data);
+    uint32_t read(uint16_t addr);
+    uint16_t write(uint16_t addr, uint32_t data);
     void update();
     uint8_t enabled();
     void enable();

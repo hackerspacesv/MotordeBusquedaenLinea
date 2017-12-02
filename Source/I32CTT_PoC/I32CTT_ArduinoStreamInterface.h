@@ -20,7 +20,7 @@
 #define I32CTT_ArduinoStreamInterface_H
 
 #ifdef ARDUINO
-#define SER_BUFF_SIZE 255
+#define SER_BUFF_SIZE 126
 
 class I32CTT_ArduinoStreamInterface: public I32CTT_Interface {
   public:

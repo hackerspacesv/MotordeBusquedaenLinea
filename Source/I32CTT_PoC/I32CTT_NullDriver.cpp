@@ -24,11 +24,19 @@ I32CTT_NullDriver::I32CTT_NullDriver(uint32_t mode_id) : I32CTT_ModeDriver(mode_
   // Do nothing. Just call superclass parent
 }
  
-uint32_t I32CTT_NullDriver::read(uint8_t addr) {
-  return 0xAAAAAAAA; // Test Pattern
+uint32_t I32CTT_NullDriver::read(uint16_t addr) {
+  uint32_t result;
+  switch(addr) {
+    case 0x0000:
+      result = this->driver_name;
+      break;
+    default:
+      result = 0xAAAAAAAA;
+  }
+  return result; // Test Pattern
 }
 
-uint8_t I32CTT_NullDriver::write(uint8_t addr, uint32_t data) {
+uint16_t I32CTT_NullDriver::write(uint16_t addr, uint32_t data) {
   return addr; // Null driver always return a valid address
 }
 

@@ -31,10 +31,12 @@
 // TODO: Check for memory leaks
 
 enum CMD_t {
-  CMD_R  = 1,
-  CMD_AR = 2,
-  CMD_W  = 3,
-  CMD_AW = 4
+  CMD_R   = 1,
+  CMD_AR  = 2,
+  CMD_W   = 3,
+  CMD_AW  = 4,
+  CMD_ENA = 5,
+  CMD_DIS = 6
 };
 
 struct __attribute__((__packed__)) I32CTT_Header {
@@ -65,17 +67,18 @@ class I32CTT_Interface {
 
 class I32CTT_ModeDriver {
   public:
-    I32CTT_ModeDriver(uint8_t position);
+    I32CTT_ModeDriver(uint32_t driver_name);
     virtual void init()=0;
-    virtual uint32_t read(uint8_t addr)=0;
-    virtual uint8_t write(uint8_t addr, uint32_t data)=0;
+    virtual uint32_t read(uint16_t addr)=0;
+    virtual uint16_t write(uint16_t addr, uint32_t data)=0;
     virtual void update()=0;
     virtual uint8_t enabled() = 0;
     virtual void enable() = 0;
     virtual void disable() = 0;
-    uint8_t get_position();
+    static uint32_t str2name(const char *str);
+    uint32_t get_name();
   protected:
-    uint32_t position;
+    uint32_t driver_name;
 };
 
 class I32CTT_Controller {
@@ -85,6 +88,8 @@ class I32CTT_Controller {
     uint8_t add_mode_driver(I32CTT_ModeDriver &drv);
     void init();
     void run();
+    void enable_scheduler();
+    void disable_scheduler();
     static uint16_t get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     static uint32_t get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     static uint8_t reg_count(uint8_t cmd_type, uint8_t buffsize);
@@ -96,5 +101,7 @@ class I32CTT_Controller {
     I32CTT_ModeDriver **drivers;
     I32CTT_Interface *interface;
     uint8_t total_modes;
+    uint8_t modes_set;
+    uint8_t scheduler_enabled;
 };
 #endif

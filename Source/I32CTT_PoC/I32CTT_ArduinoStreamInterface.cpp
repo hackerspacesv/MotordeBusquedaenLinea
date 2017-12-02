@@ -33,7 +33,8 @@ void I32CTT_ArduinoStreamInterface::init() {
 
 void I32CTT_ArduinoStreamInterface::update() {
   uint8_t c;
-  if(this->port->available()) {
+  uint8_t data_available = this->port->available();
+  if(data_available) {
     c = this->port->read();
     if(c == '\r' || c == '\n') {
       this->port->println((char*)serial_buffer);
@@ -64,6 +65,7 @@ void I32CTT_ArduinoStreamInterface::send() {
   uint8_t cmd = 0;
   cmd = this->tx_buffer[0]>>1;
   uint8_t reg_count = I32CTT_Controller::reg_count(cmd, this->tx_size);
+  uint8_t mode = this->tx_buffer[1];
   
   switch(cmd) {
     case CMD_R:
@@ -73,7 +75,8 @@ void I32CTT_ArduinoStreamInterface::send() {
       this->port->print("w"); 
       break;
     case CMD_AR:
-      this->port->print("ar");
+      this->port->print("ar,");
+      this->port->print(mode, DEC);
       for(int i=0;i<reg_count;i++) {
         this->port->print(",");
         this->port->print(I32CTT_Controller::get_reg(this->tx_buffer, cmd, i), HEX);
@@ -82,7 +85,8 @@ void I32CTT_ArduinoStreamInterface::send() {
       }
       break;
     case CMD_AW:
-      this->port->print("aw");
+      this->port->print("aw,");
+      this->port->print(mode, DEC);
       for(int i=0;i<reg_count;i++) {
         this->port->print(",");
         this->port->print(I32CTT_Controller::get_reg(this->tx_buffer, cmd, i), HEX);
