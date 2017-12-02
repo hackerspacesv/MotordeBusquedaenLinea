@@ -32,23 +32,23 @@ uint8_t I32CTT_NullDriver::write(uint8_t addr, uint32_t data) {
   return addr; // Null driver always return a valid address
 }
 
-void I32CTT_NullDriver::h_answer_read(uint8_t addr, uint32_t data) {
-  // Do nothing.
-}
-
-void I32CTT_NullDriver::h_answer_write(uint8_t addr) {
-  // Do nothing.
+void I32CTT_NullDriver::init() {
+  // Do nothing.  
 }
 
 void I32CTT_NullDriver::update() {
   // Do nothing.  
 }
 
-void I32CTT_NullDriver::on_mode_entry() {
-  // Do nothing.
+uint8_t I32CTT_NullDriver::enabled() {
+  return 1; // Driver is always enabled
 }
 
-void I32CTT_NullDriver::on_mode_exit() {
-  // Do nothing.
+void I32CTT_NullDriver::enable() {
+  // Do nothing.  
+}
+
+void I32CTT_NullDriver::disable() {
+  // Do nothing.  
 }
 

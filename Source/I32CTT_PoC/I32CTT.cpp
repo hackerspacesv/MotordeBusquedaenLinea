@@ -33,8 +33,12 @@
  * \param[in] mode_id  Identificador del driver. Nota: 
  *          el controlador no verifica que sea único.
  */
-I32CTT_ModeDriver::I32CTT_ModeDriver(uint32_t mode_id) {
-  this->mode_id = mode_id;
+I32CTT_ModeDriver::I32CTT_ModeDriver(uint8_t position) {
+  this->position = position;
+}
+
+uint8_t I32CTT_ModeDriver::get_position() {
+  return this->position;
 }
 
 /**
@@ -43,10 +47,10 @@ I32CTT_ModeDriver::I32CTT_ModeDriver(uint32_t mode_id) {
  *        atributos privados utilizados por el mismo.
  *        No recibe ningún parámetro.
  */
-I32CTT_Controller::I32CTT_Controller() {
+I32CTT_Controller::I32CTT_Controller(uint8_t total_modes) {
   this->interface = 0;
-  this->mode_counter = 0;
-  this->current_mode = 0;
+  this->total_modes = total_modes;
+  this->drivers = (I32CTT_ModeDriver**)malloc((sizeof(I32CTT_ModeDriver*)*total_modes));
 }
 
 /**
@@ -59,6 +63,8 @@ I32CTT_Controller::I32CTT_Controller() {
  */
 uint8_t I32CTT_Controller::set_interface(I32CTT_Interface &iface) {
   this->interface = &iface;
+  this->interface->init();
+  Serial.println("Controller initialized.");
   return 0;
 }
 
@@ -72,12 +78,15 @@ uint8_t I32CTT_Controller::set_interface(I32CTT_Interface &iface) {
  * \param drv Instancia de I32CTT_ModeDriver para agregar a la lista.
  */
 uint8_t I32CTT_Controller::add_mode_driver(I32CTT_ModeDriver &drv) {
-  uint8_t result = 0;
-  if(this->mode_counter<MAX_MODE_COUNT) {
-    this->drivers[this->mode_counter++] = &drv;
-    result = this->mode_counter;
-  }
-  return result;
+  uint8_t tbl_position = drv.get_position();
+  if(tbl_position>this->total_modes)
+    return 0;
+  
+  this->drivers[tbl_position] = &drv;
+  
+  drv.init();
+  
+  return tbl_position;
 }
 
 /**
@@ -87,9 +96,6 @@ uint8_t I32CTT_Controller::add_mode_driver(I32CTT_ModeDriver &drv) {
  *        incluyendo "Idle". Esta función no toma parámetros.
  */
 void I32CTT_Controller::init() {
-  if(this->interface) {
-    this->interface->init();
-  }
   Serial.println("Machine started...");
 }
 
@@ -116,8 +122,10 @@ void I32CTT_Controller::run() {
     }
   }
 
-  if(this->drivers[this->current_mode] != 0) {
-    this->drivers[this->current_mode]->update();
+  for(int i=0;i < this->total_modes; i++) {
+    if(this->drivers[i] != 0 && this->drivers[i]->enabled()) {
+      this->drivers[i]->update();
+    }
   }
 }
 
@@ -131,13 +139,17 @@ void I32CTT_Controller::run() {
  */
 uint8_t I32CTT_Controller::valid_size(uint8_t cmd_type, uint8_t buffsize) {
   uint8_t result = 0;
+  uint8_t min_size = 0;
   
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
-     // Check for header (1-byte) + [Addr (4-byte) ...]
-     result = (buffsize>4) && ((buffsize-1)%4 == 0);
+     // Check for header (1-byte) + (1-byte) + [Addr (2-byte) ...]
+     min_size = sizeof(struct I32CTT_Header);
+     result = (buffsize>min_size) && ((buffsize-sizeof(struct I32CTT_Header))%sizeof(struct I32CTT_Reg) == 0);
+     
   } else if (cmd_type == CMD_W || cmd_type == CMD_AR) {
-     // Check for header (1-byte) + [(Addr (4-byte) + Data (4-byte) ...]
-     result = (buffsize>8) && ((buffsize-1)%8 == 0);
+     // Check for header (1-byte) + (1-byte) [(Addr (2-byte) + Data (4-byte) ...]
+     min_size = sizeof(struct I32CTT_Header);
+     result = (buffsize>min_size) && ((buffsize-sizeof(struct I32CTT_Header))%sizeof(struct I32CTT_RegData) == 0);
   }
 
   return result;
@@ -153,13 +165,14 @@ uint8_t I32CTT_Controller::valid_size(uint8_t cmd_type, uint8_t buffsize) {
  */
 uint8_t I32CTT_Controller::reg_count(uint8_t cmd_type, uint8_t buffsize) {
   uint8_t result = 0;
+  uint8_t header_size = sizeof(struct I32CTT_Header);
   
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
      // Check for header (1-byte) + [Addr (4-byte) ...]
-     result = (buffsize-1)/4;
+     result = (buffsize-header_size)/sizeof(struct I32CTT_Reg);
   } else if (cmd_type == CMD_W || cmd_type == CMD_AR) {
      // Check for header (1-byte) + [(Addr (4-byte) + Data (4-byte) ...]
-     result = (buffsize-1)/8;
+     result = (buffsize-header_size)/sizeof(struct I32CTT_RegData);
   }
 
   return result;
@@ -175,19 +188,20 @@ uint8_t I32CTT_Controller::reg_count(uint8_t cmd_type, uint8_t buffsize) {
  * \param cmd_type Tipo de comando solicitado.
  * \param pos Posición del registro (0..n).
  */
-uint32_t I32CTT_Controller::get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
-  uint32_t result = 0;
+uint16_t I32CTT_Controller::get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
+  uint16_t result = 0;
   uint8_t offset = 0;
+  uint8_t header_size = sizeof(struct I32CTT_Header);
   
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
-     offset = 1+pos*sizeof(uint32_t);
+     offset = header_size+pos*sizeof(struct I32CTT_Reg);
   } else if (cmd_type == CMD_W || cmd_type == CMD_AR) {
-     offset = 1+pos*(sizeof(uint32_t)*2);
+     offset = header_size+pos*sizeof(struct I32CTT_RegData);
   } else {
     return result;
   }
 
-  memcpy(&result, buffer+offset, sizeof(uint32_t));
+  memcpy(&result, buffer+offset, sizeof(uint16_t));
 
   return result;
 }
@@ -207,9 +221,10 @@ uint32_t I32CTT_Controller::get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t p
 uint32_t I32CTT_Controller::get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
   uint32_t result = 0;
   uint8_t offset = 0;
+  uint8_t header_size = sizeof(struct I32CTT_Header);
   
   if (cmd_type == CMD_W || cmd_type == CMD_AR) {
-     offset = 1+sizeof(uint32_t)+pos*(sizeof(uint32_t)*2);
+     offset = header_size+sizeof(struct I32CTT_Reg)+pos*sizeof(struct I32CTT_RegData);
   } else {
     return result;
   }
@@ -229,18 +244,19 @@ uint32_t I32CTT_Controller::get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t 
  * \param cmd_type Tipo de comando solicitado.
  * \param pos Posición del registro (0..n).
  */
-void I32CTT_Controller::put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type, uint8_t pos) {
+void I32CTT_Controller::put_reg(uint8_t *buffer, uint16_t reg, uint8_t cmd_type, uint8_t pos) {
   uint8_t offset = 0;
+  uint8_t header_size = sizeof(struct I32CTT_Header);
   
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
-     offset = 1+pos*sizeof(uint32_t);
+     offset = header_size+pos*sizeof(struct I32CTT_Reg);
   } else if (cmd_type == CMD_W || cmd_type == CMD_AR) {
-     offset = 1+pos*(sizeof(uint32_t)*2);
+     offset = header_size+pos*sizeof(struct I32CTT_RegData);
   } else {
     return;
   }
 
-  memcpy(buffer+offset, &reg, sizeof(uint32_t));
+  memcpy(buffer+offset, &reg, sizeof(uint16_t));
 }
 
 /**
@@ -256,9 +272,10 @@ void I32CTT_Controller::put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type,
  */
 void I32CTT_Controller::put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos) {
   uint8_t offset = 0;
+  uint8_t header_size = sizeof(struct I32CTT_Header);
   
   if (cmd_type == CMD_W || cmd_type == CMD_AR) {
-     offset = 1+sizeof(uint32_t)+pos*(sizeof(uint32_t)*2);
+     offset = header_size+sizeof(struct I32CTT_Reg)+pos*sizeof(struct I32CTT_RegData);
   } else {
     return;
   }
@@ -280,27 +297,35 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
   Serial.println("Trying to parse");
   if(buffsize==0) // Should never happend. But here just in case.
     return;
+  if(buffsize<sizeof(struct I32CTT_Header)) // This neither.
+    return;
 
   uint8_t cmd = buffer[0]>>1;
-  uint8_t ping = buffer[0]&0x01;
+  uint8_t ping = buffer[0]&0x01; // TODO: Get from queue
+  uint8_t mode = buffer[1];
 
+  Serial.print("CMD: ");
   Serial.print(cmd, HEX);
+  Serial.print("\r\n");
+  Serial.print("MODE: ");
+  Serial.print(mode, HEX);
   Serial.print("\r\n");
 
   if(!valid_size(cmd, buffsize)) // return if size invalid
     return;
+  Serial.println("Valid size.");
 
   uint8_t records = reg_count(cmd, buffsize);
 
-  if((this->interface != 0) && (this->drivers[this->current_mode] !=  0)) {
-    I32CTT_ModeDriver *driver = this->drivers[this->current_mode];
+  if((this->interface != 0) && (this->drivers[mode] !=  0)) {
+    I32CTT_ModeDriver *driver = this->drivers[mode];
     switch(cmd) {
       case CMD_R:
         Serial.print("Buffer size: ");
         Serial.println(buffsize, DEC);
         Serial.print("Records: ");
         Serial.println(records, DEC);
-        this->interface->tx_size = buffsize+records*sizeof(uint32_t);
+        this->interface->tx_size = sizeof(struct I32CTT_Header)+records*sizeof(struct I32CTT_RegData);
         this->interface->tx_buffer[0] = CMD_AR<<1 | ping;
         
         for(int i=0;i<records;i++) {
@@ -317,19 +342,10 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         // Forward to response handler
         break;
       case CMD_W:
-        this->interface->tx_size = buffsize-records*sizeof(uint32_t);
+        this->interface->tx_size = sizeof(struct I32CTT_Header)+records*sizeof(struct I32CTT_Reg);
         this->interface->tx_buffer[0] = CMD_AW<<1 | ping;
 
-        // Handle the special machine-state change:
-        if(get_reg(buffer, cmd, 0)==0) {
-          uint32_t new_mode = get_data(buffer, cmd, 0);
-          if(new_mode<MAX_MODE_COUNT && this->drivers[new_mode] != 0) {
-            driver->on_mode_exit();
-            this->current_mode = new_mode;
-            driver = this->drivers[this->current_mode];
-            driver->on_mode_entry();
-          }
-        }
+        //TODO: Look out for the affected mode
         
         for(int i=0;i<records;i++) {
           uint32_t reg = get_reg(buffer, cmd, i);

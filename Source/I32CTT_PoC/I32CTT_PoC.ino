@@ -27,11 +27,11 @@
 #include "I32CTT_NullDriver.h"
 #include "I32CTT_ArduinoStreamInterface.h"
 
-I32CTT_Controller controller;
+I32CTT_Controller controller(16);
 
 //I32CTT_NullInterface myInterface;
 I32CTT_ArduinoStreamInterface serialInterface(Serial);
-I32CTT_NullDriver myDriver(0x99999999);
+I32CTT_NullDriver myDriver(1);
 
 void setup() {
   while(!Serial);

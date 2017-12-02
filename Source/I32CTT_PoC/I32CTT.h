@@ -28,11 +28,27 @@
 #define I32CTT_MAX_MAC_PHY 102
 #define MAX_MODE_COUNT 64
 
+// TODO: Check for memory leaks
+
 enum CMD_t {
   CMD_R  = 1,
   CMD_AR = 2,
   CMD_W  = 3,
   CMD_AW = 4
+};
+
+struct __attribute__((__packed__)) I32CTT_Header {
+  uint8_t cmd;
+  uint8_t mode;
+};
+
+struct __attribute__((__packed__)) I32CTT_RegData {
+  uint16_t reg;
+  uint32_t data;
+};
+
+struct __attribute__((__packed__)) I32CTT_Reg {
+  uint16_t reg;
 };
 
 class I32CTT_Interface {
@@ -49,36 +65,36 @@ class I32CTT_Interface {
 
 class I32CTT_ModeDriver {
   public:
-    I32CTT_ModeDriver(uint32_t mode_id);
+    I32CTT_ModeDriver(uint8_t position);
+    virtual void init()=0;
     virtual uint32_t read(uint8_t addr)=0;
     virtual uint8_t write(uint8_t addr, uint32_t data)=0;
-    virtual void h_answer_read(uint8_t addr, uint32_t data)=0;
-    virtual void h_answer_write(uint8_t addr)=0;
     virtual void update()=0;
-    virtual void on_mode_entry()=0;
-    virtual void on_mode_exit()=0;
+    virtual uint8_t enabled() = 0;
+    virtual void enable() = 0;
+    virtual void disable() = 0;
+    uint8_t get_position();
   protected:
-    uint32_t mode_id;
+    uint32_t position;
 };
 
 class I32CTT_Controller {
   public:
-    I32CTT_Controller();
+    I32CTT_Controller(uint8_t total_modes);
     uint8_t set_interface(I32CTT_Interface &iface);
     uint8_t add_mode_driver(I32CTT_ModeDriver &drv);
     void init();
     void run();
-    static uint32_t get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
+    static uint16_t get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     static uint32_t get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     static uint8_t reg_count(uint8_t cmd_type, uint8_t buffsize);
   private:
     void parse(uint8_t *buffer, uint8_t buffsize);
     uint8_t valid_size(uint8_t cmd_type, uint8_t buffsize);
-    void put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type, uint8_t pos);
+    void put_reg(uint8_t *buffer, uint16_t reg, uint8_t cmd_type, uint8_t pos);
     void put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos);
-    I32CTT_ModeDriver *drivers[MAX_MODE_COUNT];
+    I32CTT_ModeDriver **drivers;
     I32CTT_Interface *interface;
-    uint8_t mode_counter;
-    uint8_t current_mode;
+    uint8_t total_modes;
 };
 #endif

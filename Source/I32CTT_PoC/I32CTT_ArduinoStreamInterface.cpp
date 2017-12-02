@@ -98,9 +98,10 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
   char *pch = strtok(string_buffer, ",");
   uint8_t pos = 0;
   uint32_t data = 0;
-  while(pch != NULL) {
-    this->port->println(pch);
+  uint16_t data16 = 0;
+  uint8_t data8 = 0;
 
+  while(pch != NULL) {
     if(pos==0) {
       if(strstr(pch,"r")!=NULL) {
         this->rx_buffer[0] = CMD_R<<1;
@@ -108,14 +109,30 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
         this->rx_buffer[0] = CMD_W<<1;
       } else {
         this->rx_size = 0;
-        this->port->println("Command rejected");
         break;
       }
       this->rx_size = sizeof(uint8_t);
+    } else if(pos==1) {
+      data8 = (uint8_t)strtol(pch,NULL, 10);
+      memcpy(this->rx_buffer+this->rx_size, &data8, sizeof(uint8_t));
+      this->rx_size += sizeof(uint8_t);
     } else {
-      data = strtol(pch,NULL, 10);
-      memcpy(this->rx_buffer+this->rx_size, &data, sizeof(uint32_t));
-      this->rx_size += sizeof(data);
+      if(this->rx_buffer[0] == CMD_R<<1 ) {
+        data16 = (uint16_t)strtol(pch,NULL, 10);
+        memcpy(this->rx_buffer+this->rx_size, &data16, sizeof(uint16_t));
+        this->rx_size += sizeof(uint16_t);
+      }
+      if(this->rx_buffer[0] == CMD_W<<1 ) {
+        if((this->rx_size-sizeof(I32CTT_Header))%sizeof(I32CTT_RegData) == 0) {
+          data16 = (uint16_t)strtol(pch,NULL, 10);
+          memcpy(this->rx_buffer+this->rx_size, &data16, sizeof(uint16_t));
+          this->rx_size += sizeof(uint16_t);
+        } else {
+          data = (uint32_t)strtol(pch,NULL, 10);
+          memcpy(this->rx_buffer+this->rx_size, &data, sizeof(uint32_t));
+          this->rx_size += sizeof(uint32_t);
+        }
+      }
     }
     pch = strtok(NULL, ","); 
     pos++;
