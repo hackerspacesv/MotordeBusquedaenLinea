@@ -1,3 +1,21 @@
+/*
+ * 
+ * This file is part of I32CTT (Integer 32-bit Control & Telemetry Transport).
+ * Copyright (C) 2017 Mario Gomez.
+ * 
+ * I32CTT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * I32CTT is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with I32CTT.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -42,9 +60,36 @@ uint8_t I32CTT_ArduinoStreamInterface::available() {
 }
 
 void I32CTT_ArduinoStreamInterface::send() {
-  for(int i=0;i<this->tx_size;i++) {
-    this->port->print(this->tx_buffer[i], DEC);  
+  
+  uint8_t cmd = 0;
+  cmd = this->tx_buffer[0]>>1;
+  uint8_t reg_count = I32CTT_Controller::reg_count(cmd, this->tx_size);
+  
+  switch(cmd) {
+    case CMD_R:
+      this->port->print("r");
+      break;
+    case CMD_W:
+      this->port->print("w"); 
+      break;
+    case CMD_AR:
+      this->port->print("ar");
+      for(int i=0;i<reg_count;i++) {
+        this->port->print(",");
+        this->port->print(I32CTT_Controller::get_reg(this->tx_buffer, cmd, i), HEX);
+        this->port->print(",");
+        this->port->print(I32CTT_Controller::get_data(this->tx_buffer, cmd, i), HEX);
+      }
+      break;
+    case CMD_AW:
+      this->port->print("aw");
+      for(int i=0;i<reg_count;i++) {
+        this->port->print(",");
+        this->port->print(I32CTT_Controller::get_reg(this->tx_buffer, cmd, i), HEX);
+      }
+      break;
   }
+  
   this->port->print("\r\n");
 }
 
@@ -69,6 +114,7 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
       this->rx_size = sizeof(uint8_t);
     } else {
       data = strtol(pch,NULL, 10);
+      memcpy(this->rx_buffer+this->rx_size, &data, sizeof(uint32_t));
       this->rx_size += sizeof(data);
     }
     pch = strtok(NULL, ","); 

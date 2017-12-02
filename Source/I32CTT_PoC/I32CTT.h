@@ -1,3 +1,27 @@
+/*
+ * 
+ * This file is part of I32CTT (Integer 32-bit Control & Telemetry Transport).
+ * Copyright (C) 2017 Mario Gomez.
+ * 
+ * I32CTT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * I32CTT is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with I32CTT.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Acerca de este archivo: Este sketch es la implementación de referencia
+ * para el protocolo de enteros de 32 bits para control y transporte de
+ * telemetría (I32CTT).
+ */
 #ifndef I32CTT_H
 #define I32CTT_H
 
@@ -44,12 +68,12 @@ class I32CTT_Controller {
     uint8_t add_mode_driver(I32CTT_ModeDriver &drv);
     void init();
     void run();
+    static uint32_t get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
+    static uint32_t get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
+    static uint8_t reg_count(uint8_t cmd_type, uint8_t buffsize);
   private:
     void parse(uint8_t *buffer, uint8_t buffsize);
     uint8_t valid_size(uint8_t cmd_type, uint8_t buffsize);
-    uint8_t reg_count(uint8_t cmd_type, uint8_t buffsize);
-    uint32_t get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
-    uint32_t get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     void put_reg(uint8_t *buffer, uint32_t reg, uint8_t cmd_type, uint8_t pos);
     void put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos);
     I32CTT_ModeDriver *drivers[MAX_MODE_COUNT];
