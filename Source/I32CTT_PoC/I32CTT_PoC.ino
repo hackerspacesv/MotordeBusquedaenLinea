@@ -26,18 +26,21 @@
 #include "I32CTT.h"
 #include "I32CTT_NullDriver.h"
 #include "I32CTT_ArduinoStreamInterface.h"
+#include "MBL_ManualDriver.h"
 
 I32CTT_Controller controller(8);
 
 //I32CTT_NullInterface myInterface;
 I32CTT_ArduinoStreamInterface serialInterface(Serial);
 I32CTT_NullDriver myDriver(I32CTT_ModeDriver::str2name("NUL"));
+MBL_ManualDriver manualDriver(I32CTT_ModeDriver::str2name("MAN"));
 
 void setup() {
   while(!Serial);
   Serial.begin(9600);
   controller.set_interface(serialInterface);
   controller.add_mode_driver(myDriver);
+  controller.add_mode_driver(manualDriver);
   controller.init();
   Serial.println("Running...");
 }
