@@ -49,6 +49,14 @@ uint32_t I32CTT_ModeDriver::str2name(const char *str) {
   return result;
 }
 
+
+void I32CTT_Controller::enable_scheduler() {
+  this->scheduler_enabled = 1;
+}
+void I32CTT_Controller::disable_scheduler() {
+  this->scheduler_enabled = 0;
+}
+
 /**
  * \brief Constructor del controlador.
  *        El constructor del controlador inicializa los
@@ -363,15 +371,19 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         // Forward to response handler
         break;
       case CMD_W:
+        Serial.print("Buffer size: ");
+        Serial.println(buffsize, DEC);
+        Serial.print("Records: ");
+        Serial.println(records, DEC);
         this->interface->tx_size = sizeof(I32CTT_Header)+records*sizeof(I32CTT_Reg);
         this->interface->tx_buffer[0] = CMD_AW<<1 | ping;
         this->interface->tx_buffer[1] = mode;
 
-        //TODO: Look out for the affected mode
-        
         for(int i=0;i<records;i++) {
           uint32_t reg = get_reg(buffer, cmd, i);
           uint32_t data = get_data(buffer, cmd, i);
+          Serial.print("Register: ");
+          Serial.println(reg, DEC);
           driver->write(reg, data);
           put_reg(this->interface->tx_buffer, reg, CMD_AW, i);
         }

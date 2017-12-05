@@ -101,9 +101,15 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
   char *string_buffer = (char*)this->serial_buffer;
   char *pch = strtok(string_buffer, ",");
   uint8_t pos = 0;
+  uint8_t reg_count = 0;
   uint32_t data = 0;
   uint16_t data16 = 0;
   uint8_t data8 = 0;
+  
+  for(int i=0;i<I32CTT_MAX_MAC_PHY;i++) {
+    this->rx_buffer[i] = 0;
+  }
+  this->rx_size = 0;
 
   while(pch != NULL) {
     if(pos==0) {
@@ -123,24 +129,38 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
     } else {
       if(this->rx_buffer[0] == CMD_R<<1 ) {
         data16 = (uint16_t)strtol(pch,NULL, 10);
-        memcpy(this->rx_buffer+this->rx_size, &data16, sizeof(uint16_t));
-        this->rx_size += sizeof(uint16_t);
+        I32CTT_Controller::put_reg(this->rx_buffer, data16, CMD_R, pos-2);
+        this->rx_size += sizeof(I32CTT_Reg);
       }
       if(this->rx_buffer[0] == CMD_W<<1 ) {
-        if((this->rx_size-sizeof(I32CTT_Header))%sizeof(I32CTT_RegData) == 0) {
+        if((pos%2)==0) {
           data16 = (uint16_t)strtol(pch,NULL, 10);
-          memcpy(this->rx_buffer+this->rx_size, &data16, sizeof(uint16_t));
-          this->rx_size += sizeof(uint16_t);
+          this->port->print("REG:");
+          this->port->println(data16, HEX);
+          I32CTT_Controller::put_reg(this->rx_buffer, data16, CMD_W, reg_count);
         } else {
           data = (uint32_t)strtol(pch,NULL, 10);
-          memcpy(this->rx_buffer+this->rx_size, &data, sizeof(uint32_t));
-          this->rx_size += sizeof(uint32_t);
+          this->port->print("DATA:");
+          this->port->println(data, HEX);
+          I32CTT_Controller::put_data(this->rx_buffer, data, CMD_W, reg_count++);
+          this->rx_size += sizeof(I32CTT_RegData);
         }
       }
     }
     pch = strtok(NULL, ","); 
     pos++;
   }
+  this->port->println("Packet: ");
+  for(int i=0;i<this->rx_size;i++) {
+    Serial.print(this->rx_buffer[i], HEX);
+    Serial.print(" ");
+  }
+  this->port->print("\r\n");
+  
+  for(int i=0;i<I32CTT_MAX_MAC_PHY;i++) {
+    this->serial_buffer[i] = 0;
+  }
+  this->serial_size = 0;
   if(pos>1) {
     this->data_available = 1;
   }

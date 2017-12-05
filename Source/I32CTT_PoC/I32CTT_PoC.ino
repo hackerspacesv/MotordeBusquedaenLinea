@@ -41,6 +41,8 @@ void setup() {
   controller.set_interface(serialInterface);
   controller.add_mode_driver(myDriver);
   controller.add_mode_driver(manualDriver);
+  manualDriver.enable();
+  controller.enable_scheduler();
   controller.init();
   Serial.println("Running...");
 }

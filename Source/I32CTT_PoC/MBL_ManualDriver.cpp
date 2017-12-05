@@ -7,7 +7,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * pwm_val_m1a
+ * 
  * I32CTT is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,9 +20,15 @@
 #include "I32CTT.h"
 #include "MBL_ManualDriver.h"
 #include "Arduino.h"
+#define FP_OFFSET 24
 
 MBL_ManualDriver::MBL_ManualDriver(uint32_t mode_id) : I32CTT_ModeDriver(mode_id) {
   // Do nothing. Just call superclass parent
+  this->is_enabled = 0;
+  this->x = 0;
+  this->y = 0;
+  this->a = (uint32_t)1<<23; // 0.5
+  this->b = (uint32_t)1<<23; // 0.5
 }
  
 uint32_t MBL_ManualDriver::read(uint16_t addr) {
@@ -31,6 +37,18 @@ uint32_t MBL_ManualDriver::read(uint16_t addr) {
     case 0x0000:
       result = this->driver_name;
       break;
+    case 0x0001: // X
+      result = this->x;
+      break;
+    case 0x0002: // Y
+      result = this->y;
+      break;
+    case 0x0003: // a
+      result = this->a;
+      break;
+    case 0x0004: // b
+      result = this->b;
+      break;
     default:
       result = 0x00;
   }
@@ -38,12 +56,27 @@ uint32_t MBL_ManualDriver::read(uint16_t addr) {
 }
 
 uint16_t MBL_ManualDriver::write(uint16_t addr, uint32_t data) {
+  Serial.println("Manual Mode Write:");
+  Serial.print(addr, HEX);
+  Serial.print(" ");
+  Serial.println(data, HEX);
+  
   switch(addr) {
     case 0x0001: // X
-      this->x = data;
+      if(data!=this->x)
+        this->x = data;
       break;
     case 0x0002: // Y
-      this->y = data;
+      if(data!=this->y)
+        this->y = data;
+      break;
+    case 0x0003: // a
+      if(data!=this->a)
+        this->a = data;
+      break;
+    case 0x0004: // b
+      if(data!=this->b)
+        this->b = data;
       break;
     default:
       break;
@@ -64,34 +97,41 @@ void MBL_ManualDriver::init() {
   digitalWrite(MBL_M2B, LOW);
 }
 
-uint32_t MBL_ManualDriver::fp_ABS(uint32_t val) {
+static inline uint32_t fp_ABS(uint32_t a) {
   uint32_t result = 0;
-  if((val&0x80000000)>0) {
-    result = (!val+1) & 0xEFFFFFFF;
-  } else{
-    result = val;
+  if(a&0x80000000) {
+    result = !a + (1<<FP_OFFSET);
+  } else {
+    result = a;
   }
   return result;
 }
 
+static inline uint32_t fp_MUL(uint32_t a, uint32_t b) {
+  return (((uint64_t)a * (uint64_t)b) >> FP_OFFSET) | ((a&0x80000000) ^ (b&0x80000000)); 
+}
+
+static inline float to_FLOAT(uint32_t val) {
+  return ((int32_t)val)/((float)(1<<FP_OFFSET));
+}
+
+
 void MBL_ManualDriver::update() {
   uint8_t pwm_val_m1a, pwm_val_m1b, pwm_val_m2a, pwm_val_m2b;
 
-  // Nota: Este control manual utiliza logica difusa
-  // para traducir posiciones del mando X y Y a valores
-  // de PWM en los motores.
-  uint32_t power1 = fp_ABS(this->y)*(this->y*(0x10000-fp_ABS(this->x))+this->x);
-  uint32_t power2 = fp_ABS(this->y)*(this->y*(0x10000-fp_ABS(this->x))+this->x*0xFFFF0000);
-  
-  pwm_val_m1a =((power1&0x80000000)==0 && power1>0) ? 0 : (0xFF0000*fp_ABS(power1))>>16;
-  pwm_val_m1b =((power1&0x80000000)>0 && (power1&0xEFFFFFFF)>=0) ? 0 : (0xFF0000*fp_ABS(power1))>>16;
-  pwm_val_m2a =((power2&0x80000000)==0 && power2>0) ? 0 : (0xFF0000*fp_ABS(power2))>>16;
-  pwm_val_m2b =((power2&0x80000000)>0 && (power2&0xEFFFFFFF)>=0) ? 0 : (0xFF0000*fp_ABS(power2))>>16;
+  uint32_t power1 = fp_MUL(this->a,this->y)+fp_MUL(this->b,this->x);
+  uint32_t power2 = fp_MUL(this->a,this->y)-fp_MUL(this->b,this->x);
 
+  pwm_val_m1a = (power1&0x80000000) ? fp_MUL(0x7F<<FP_OFFSET,fp_ABS(power1))>>FP_OFFSET : 0;
+  pwm_val_m1b = (power1&0x80000000) ? 0 : fp_MUL(0x7F<<FP_OFFSET,fp_ABS(power1))>>FP_OFFSET;
+  pwm_val_m2a = (power2&0x80000000) ? fp_MUL(0x7F<<FP_OFFSET,fp_ABS(power2))>>FP_OFFSET : 0;
+  pwm_val_m2b = (power2&0x80000000) ? 0 : fp_MUL(0x7F<<FP_OFFSET,fp_ABS(power2))>>FP_OFFSET;
+  
   analogWrite(MBL_M1A, pwm_val_m1a);
   analogWrite(MBL_M1B, pwm_val_m1b);
   analogWrite(MBL_M2A, pwm_val_m2a);
   analogWrite(MBL_M2B, pwm_val_m2b);
+
 }
 
 uint8_t MBL_ManualDriver::enabled() {
@@ -99,6 +139,7 @@ uint8_t MBL_ManualDriver::enabled() {
 }
 
 void MBL_ManualDriver::enable() {
+  Serial.println("Enabling manual mode");
   this->is_enabled = 1;
 }
 

@@ -34,11 +34,12 @@ class MBL_ManualDriver: public I32CTT_ModeDriver {
     uint8_t enabled();
     void enable();
     void disable();
-    static uint32_t fp_ABS(uint32_t input);
   private:
     uint8_t is_enabled;
     uint32_t y;
     uint32_t x;
+    uint32_t a;
+    uint32_t b;
 };
 
 #endif

@@ -92,12 +92,12 @@ class I32CTT_Controller {
     void disable_scheduler();
     static uint16_t get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     static uint32_t get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
+    static void put_reg(uint8_t *buffer, uint16_t reg, uint8_t cmd_type, uint8_t pos);
+    static void put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos);
     static uint8_t reg_count(uint8_t cmd_type, uint8_t buffsize);
   private:
     void parse(uint8_t *buffer, uint8_t buffsize);
     uint8_t valid_size(uint8_t cmd_type, uint8_t buffsize);
-    void put_reg(uint8_t *buffer, uint16_t reg, uint8_t cmd_type, uint8_t pos);
-    void put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos);
     I32CTT_ModeDriver **drivers;
     I32CTT_Interface *interface;
     uint8_t total_modes;
