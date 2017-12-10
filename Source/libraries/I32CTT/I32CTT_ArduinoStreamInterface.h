@@ -25,10 +25,12 @@
 class I32CTT_ArduinoStreamInterface: public I32CTT_Interface {
   public:
     I32CTT_ArduinoStreamInterface(Stream &port);
+    ~I32CTT_ArduinoStreamInterface();
     void init();
     void update();
     uint8_t available();
     void send();
+    uint16_t get_MTU();
   private:
     Stream *port;
     void process_buffer();

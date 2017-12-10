@@ -32,21 +32,39 @@ I32CTT_Controller controller(8);
 
 //I32CTT_NullInterface myInterface;
 I32CTT_ArduinoStreamInterface serialInterface(Serial);
-I32CTT_NullDriver myDriver(I32CTT_ModeDriver::str2name("NUL"));
+I32CTT_NullDriver idleDriver(I32CTT_ModeDriver::str2name("NUL"));
 MBL_ManualDriver manualDriver(I32CTT_ModeDriver::str2name("MAN"));
 
 void setup() {
   while(!Serial);
   Serial.begin(9600);
   controller.set_interface(serialInterface);
-  controller.add_mode_driver(myDriver);
+  controller.add_mode_driver(idleDriver);
   controller.add_mode_driver(manualDriver);
   manualDriver.enable();
   controller.enable_scheduler();
   controller.init();
   Serial.println("Running...");
 }
+
+unsigned long t_elapsed = 0;
 void loop() {
   // put your main code here, to run repeatedly:
   controller.run();
+
+  if((millis()-t_elapsed)>1000) {
+    
+    controller.master.set_mode(1);
+    controller.master.read_record({1});
+    controller.master.read_record({2});
+    controller.master.read_record({3});
+    controller.master.try_send();
+
+    controller.master.set_mode(0);
+    controller.master.write_record({1,0x1000000});
+    controller.master.write_record({2,0x1000000});
+    controller.master.try_send();
+    
+    t_elapsed = millis();
+  }
 }

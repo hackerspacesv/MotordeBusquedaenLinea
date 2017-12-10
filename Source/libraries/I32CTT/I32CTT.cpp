@@ -8,6 +8,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
+    uint8_t data_available;
  * I32CTT is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,6 +22,110 @@
 #include <string.h>
 #include "I32CTT.h"
 #include <Arduino.h>
+#include <stdarg.h>
+
+
+I32CTT_Controller::MasterInterface::MasterInterface() {
+  this->controller = NULL;
+  this->state = MASTER_STATE_t::IDLE;
+  this->current_cmd = CMD_RES;
+  this->records = 0;
+  this->mode_requested = 0;
+}
+
+I32CTT_Controller::MasterInterface::MasterInterface(I32CTT_Controller *controller) {
+  this->controller = controller;
+  this->state = MASTER_STATE_t::IDLE;
+  this->current_cmd = CMD_RES;
+  this->records = 0;
+  this->mode_requested = 0;
+}
+
+void I32CTT_Controller::MasterInterface::set_mode(uint8_t mode) {
+  this->controller->interface->tx_buffer[1] = mode<<1;
+}
+
+uint8_t I32CTT_Controller::MasterInterface::write_record(I32CTT_RegData reg_data) {
+  uint8_t result = 1;
+  
+  this->state = MASTER_STATE_t::PREPARE;
+  if(this->current_cmd!=CMD_W) {
+    this->current_cmd = CMD_W;
+    this->controller->interface->tx_buffer[0]  = this->current_cmd<<1;
+    this->records = 0;
+  }
+  I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg_data.reg, CMD_W, this->records);
+  I32CTT_Controller::put_data(this->controller->interface->tx_buffer, reg_data.data, CMD_W, this->records);
+  
+  return result; // TODO: Check if register was added based on buffer size
+}
+
+uint8_t I32CTT_Controller::MasterInterface::read_record(I32CTT_Reg reg) {
+  uint8_t result = 0;
+  // Enviar comandos al tx_buffer
+  
+  this->state = MASTER_STATE_t::PREPARE;
+  if(this->current_cmd!=CMD_R) {
+    this->current_cmd = CMD_R;
+    this->controller->interface->tx_buffer[0]  = this->current_cmd<<1;
+    this->records = 0;
+  }
+  I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg.reg, CMD_R, this->records);
+
+  return result;
+}
+
+uint8_t I32CTT_Controller::MasterInterface::try_send() {
+  // Enviar comandos al tx_buffer
+  this->state = MASTER_STATE_t::SENDING;
+
+  switch(this->current_cmd) {
+    case CMD_R:
+      this->controller->interface->tx_size = sizeof(I32CTT_Header)+this->records*sizeof(I32CTT_Reg);
+      break;
+    case CMD_W:
+      this->controller->interface->tx_size = sizeof(I32CTT_Header)+this->records*sizeof(I32CTT_RegData);
+      break;
+    default:
+      break;
+  }
+  while(this->controller->interface->tx_size>0) {
+    this->controller->interface->send();
+  }
+
+  this->state = MASTER_STATE_t::SENT;
+  return this->state;
+}
+
+
+uint8_t I32CTT_Controller::MasterInterface::available(uint8_t mode) {
+  uint8_t result;
+  
+  if(mode!=this->mode_requested) {
+    result = false;
+  } else {
+    result = this->data_available;
+    this->data_available = false;
+  }
+  return result;
+}
+
+uint8_t I32CTT_Controller::MasterInterface::records_available() {
+  uint8_t result;
+  
+  result = reg_count(this->mode_requested, this->controller->interface->rx_size);
+  
+  return result;
+}
+
+I32CTT_RegData I32CTT_Controller::MasterInterface::read(uint8_t idx) {
+  I32CTT_RegData result;
+  
+  result.reg = get_reg(this->controller->interface->rx_buffer, this->mode_requested, idx);
+  result.reg = get_data(this->controller->interface->rx_buffer, this->mode_requested, idx);
+  
+  return result;
+}
 
 /**
  * \brief Constructor del driver de modo.
@@ -67,7 +172,8 @@ I32CTT_Controller::I32CTT_Controller(uint8_t total_modes) {
   this->interface = 0;
   this->total_modes = total_modes;
   this->modes_set = 0;
-  this->drivers = (I32CTT_ModeDriver**)malloc((sizeof(I32CTT_ModeDriver*)*total_modes));
+  this->drivers = new I32CTT_ModeDriver*[total_modes]; // (I32CTT_ModeDriver**)malloc((sizeof(I32CTT_ModeDriver*)*total_modes));
+  this->master = MasterInterface(this);
   for(int i=0;i<this->total_modes;i++) {
     this->drivers[i] = NULL;
   }
@@ -306,6 +412,7 @@ void I32CTT_Controller::put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_typ
   memcpy(buffer+offset, &data, sizeof(uint32_t));
 }
 
+
 /**
  * \brief Procesa los datos recibidos por la interfaz.
  *        Este método se encarga de procesar todos los datos recibidos
@@ -324,7 +431,6 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
     return;
 
   uint8_t cmd = buffer[0]>>1;
-  uint8_t ping = buffer[0]&0x01; // TODO: Get from queue
   uint8_t mode = buffer[1];
 
   Serial.print("CMD: ");
@@ -354,7 +460,7 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         Serial.print("Records: ");
         Serial.println(records, DEC);
         this->interface->tx_size = sizeof(I32CTT_Header)+records*sizeof(I32CTT_RegData);
-        this->interface->tx_buffer[0] = CMD_AR<<1 | ping;
+        this->interface->tx_buffer[0] = CMD_AR;
         this->interface->tx_buffer[1] = mode;
         
         for(int i=0;i<records;i++) {
@@ -369,6 +475,7 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         break;
       case CMD_AR:
         // Forward to response handler
+        //this->data_available = true;
         break;
       case CMD_W:
         Serial.print("Buffer size: ");
@@ -376,7 +483,7 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         Serial.print("Records: ");
         Serial.println(records, DEC);
         this->interface->tx_size = sizeof(I32CTT_Header)+records*sizeof(I32CTT_Reg);
-        this->interface->tx_buffer[0] = CMD_AW<<1 | ping;
+        this->interface->tx_buffer[0] = CMD_AW;
         this->interface->tx_buffer[1] = mode;
 
         for(int i=0;i<records;i++) {

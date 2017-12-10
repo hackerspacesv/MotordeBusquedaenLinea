@@ -24,7 +24,14 @@
 #include "I32CTT_ArduinoStreamInterface.h"
 
 I32CTT_ArduinoStreamInterface::I32CTT_ArduinoStreamInterface(Stream &port) {
+  this->rx_buffer = new uint8_t[SER_BUFF_SIZE];
+  this->tx_buffer = new uint8_t[SER_BUFF_SIZE];
   this->port = &port;
+}
+
+I32CTT_ArduinoStreamInterface::~I32CTT_ArduinoStreamInterface() {
+  delete this->rx_buffer;
+  delete this->rx_buffer;
 }
 
 void I32CTT_ArduinoStreamInterface::init() {
@@ -39,10 +46,10 @@ void I32CTT_ArduinoStreamInterface::update() {
     if(c == '\r' || c == '\n') {
       this->port->println((char*)serial_buffer);
       
+      this->serial_buffer[this->serial_size] = '\0';
+      
       this->process_buffer();
       
-      this->serial_buffer[0] = '\0';
-      this->serial_size = 0;
     } else {
       if(this->serial_size<(SER_BUFF_SIZE-1)) {
         this->serial_buffer[this->serial_size++] = c;
@@ -70,9 +77,11 @@ void I32CTT_ArduinoStreamInterface::send() {
   switch(cmd) {
     case CMD_R:
       this->port->print("r");
+      this->tx_size = 0;
       break;
     case CMD_W:
       this->port->print("w"); 
+      this->tx_size = 0;
       break;
     case CMD_AR:
       this->port->print("ar,");
@@ -83,6 +92,7 @@ void I32CTT_ArduinoStreamInterface::send() {
         this->port->print(",");
         this->port->print(I32CTT_Controller::get_data(this->tx_buffer, cmd, i), HEX);
       }
+      this->tx_size = 0;
       break;
     case CMD_AW:
       this->port->print("aw,");
@@ -91,6 +101,7 @@ void I32CTT_ArduinoStreamInterface::send() {
         this->port->print(",");
         this->port->print(I32CTT_Controller::get_reg(this->tx_buffer, cmd, i), HEX);
       }
+      this->tx_size = 0;
       break;
   }
   
@@ -164,4 +175,8 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
   if(pos>1) {
     this->data_available = 1;
   }
+}
+
+uint16_t I32CTT_ArduinoStreamInterface::get_MTU() {
+  return SER_BUFF_SIZE;
 }

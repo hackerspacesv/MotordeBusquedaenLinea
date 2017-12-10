@@ -16,18 +16,24 @@
  * You should have received a copy of the GNU General Public License
  * along with I32CTT.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef I32CTT_NullInterface_H
-#define I32CTT_NullInterface_H
+#include <stdint.h>
+#include "I32CTT.h"
+#include "I32CTT_Arduino802154Interface.h"
 
-class I32CTT_NullInterface: public I32CTT_Interface {
-  public:
-    I32CTT_NullInterface();
-    ~I32CTT_NullInterface();
-    void init();
-    void update();
-    uint8_t available();
-    void send();
-    uint16_t get_MTU();
-};
+void I32CTT_Arduino802154Interface::init() {
+  // Do nothing
+}
 
-#endif
+void I32CTT_Arduino802154Interface::update() {
+  // Do nothing
+}
+
+uint8_t I32CTT_Arduino802154Interface::available() {
+  // Do nothing
+  return 0;
+}
+
+void I32CTT_Arduino802154Interface::send() {
+  // Do nothing
+}
+
