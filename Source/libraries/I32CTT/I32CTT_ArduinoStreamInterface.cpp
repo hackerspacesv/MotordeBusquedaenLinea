@@ -1,7 +1,7 @@
 /*
  * 
  * This file is part of I32CTT (Integer 32-bit Control & Telemetry Transport).
- * Copyright (C) 2017 Mario Gomez.
+ * Copyright (C) 2017 Mario Gomez / Hackerspace San Salvador.
  * 
  * I32CTT is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,14 +24,25 @@
 #include "I32CTT_ArduinoStreamInterface.h"
 
 I32CTT_ArduinoStreamInterface::I32CTT_ArduinoStreamInterface(Stream &port) {
-  this->rx_buffer = new uint8_t[SER_BUFF_SIZE];
-  this->tx_buffer = new uint8_t[SER_BUFF_SIZE];
+  this->rx_buffer = (uint8_t*)malloc(sizeof(uint8_t)*SER_MTU_SIZE);
+  memset(this->rx_buffer, 0, sizeof(uint8_t)*SER_MTU_SIZE);
+  this->rx_size = 0;
+  this->tx_buffer = (uint8_t*)malloc(sizeof(uint8_t)*SER_MTU_SIZE);
+  memset(this->tx_buffer, 0, sizeof(uint8_t)*SER_MTU_SIZE);
+  this->tx_size = 0;
+  this->serial_buffer = (uint8_t*)malloc(sizeof(uint8_t)*SER_BUFF_SIZE);
+  memset(this->serial_buffer, 0, sizeof(uint8_t)*SER_BUFF_SIZE);
+
   this->port = &port;
+
+  this->d_available = 0;
+  this->serial_size = 0;
 }
 
 I32CTT_ArduinoStreamInterface::~I32CTT_ArduinoStreamInterface() {
   delete this->rx_buffer;
   delete this->rx_buffer;
+  delete this->serial_buffer;
 }
 
 void I32CTT_ArduinoStreamInterface::init() {
@@ -39,17 +50,23 @@ void I32CTT_ArduinoStreamInterface::init() {
 }
 
 void I32CTT_ArduinoStreamInterface::update() {
+
   uint8_t c;
-  uint8_t data_available = this->port->available();
-  if(data_available) {
+  uint8_t c_available = this->port->available();
+
+  if(c_available) {
     c = this->port->read();
     if(c == '\r' || c == '\n') {
-      this->port->println((char*)serial_buffer);
-      
+
       this->serial_buffer[this->serial_size] = '\0';
-      
+
+      this->port->println((char*)serial_buffer);
+
       this->process_buffer();
-      
+
+      this->serial_buffer[0] = '\0';
+      this->serial_size = 0;
+
     } else {
       if(this->serial_size<(SER_BUFF_SIZE-1)) {
         this->serial_buffer[this->serial_size++] = c;
@@ -62,15 +79,19 @@ void I32CTT_ArduinoStreamInterface::update() {
 }
 
 uint8_t I32CTT_ArduinoStreamInterface::available() {
-  uint8_t result = this->data_available;
-  this->data_available = 0;
+  return 1; // Siempre retorna 1 para esta interfaz ya que el envio es bloqueante
+}
+
+uint8_t I32CTT_ArduinoStreamInterface::data_available() {
+  uint8_t result = this->d_available;
+  this->d_available = 0;
   return result;
 }
 
 void I32CTT_ArduinoStreamInterface::send() {
   
   uint8_t cmd = 0;
-  cmd = this->tx_buffer[0]>>1;
+  cmd = this->tx_buffer[0];
   uint8_t reg_count = I32CTT_Controller::reg_count(cmd, this->tx_size);
   uint8_t mode = this->tx_buffer[1];
   
@@ -109,6 +130,7 @@ void I32CTT_ArduinoStreamInterface::send() {
 }
 
 void I32CTT_ArduinoStreamInterface::process_buffer() {
+  
   char *string_buffer = (char*)this->serial_buffer;
   char *pch = strtok(string_buffer, ",");
   uint8_t pos = 0;
@@ -117,17 +139,17 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
   uint16_t data16 = 0;
   uint8_t data8 = 0;
   
-  for(int i=0;i<I32CTT_MAX_MAC_PHY;i++) {
-    this->rx_buffer[i] = 0;
-  }
+  //for(int i=0;i<SER_MTU_SIZE;i++) {
+  //  this->rx_buffer[i] = 0;
+  //}
   this->rx_size = 0;
 
   while(pch != NULL) {
     if(pos==0) {
       if(strstr(pch,"r")!=NULL) {
-        this->rx_buffer[0] = CMD_R<<1;
+        this->rx_buffer[0] = CMD_R;
       }else if(strstr(pch,"w")!=NULL) {
-        this->rx_buffer[0] = CMD_W<<1;
+        this->rx_buffer[0] = CMD_W;
       } else {
         this->rx_size = 0;
         break;
@@ -138,12 +160,12 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
       memcpy(this->rx_buffer+this->rx_size, &data8, sizeof(uint8_t));
       this->rx_size += sizeof(uint8_t);
     } else {
-      if(this->rx_buffer[0] == CMD_R<<1 ) {
+      if(this->rx_buffer[0] == CMD_R ) {
         data16 = (uint16_t)strtol(pch,NULL, 10);
         I32CTT_Controller::put_reg(this->rx_buffer, data16, CMD_R, pos-2);
         this->rx_size += sizeof(I32CTT_Reg);
       }
-      if(this->rx_buffer[0] == CMD_W<<1 ) {
+      if(this->rx_buffer[0] == CMD_W ) {
         if((pos%2)==0) {
           data16 = (uint16_t)strtol(pch,NULL, 10);
           this->port->print("REG:");
@@ -167,16 +189,17 @@ void I32CTT_ArduinoStreamInterface::process_buffer() {
     Serial.print(" ");
   }
   this->port->print("\r\n");
-  
-  for(int i=0;i<I32CTT_MAX_MAC_PHY;i++) {
+
+  for(int i=0;i<SER_BUFF_SIZE;i++) {
     this->serial_buffer[i] = 0;
   }
   this->serial_size = 0;
   if(pos>1) {
-    this->data_available = 1;
+    this->d_available = 1;
   }
+  
 }
 
 uint16_t I32CTT_ArduinoStreamInterface::get_MTU() {
-  return SER_BUFF_SIZE;
+  return SER_MTU_SIZE;
 }

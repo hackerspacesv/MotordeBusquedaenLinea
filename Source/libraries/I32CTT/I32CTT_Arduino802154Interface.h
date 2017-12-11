@@ -19,12 +19,21 @@
 #ifndef I32CTT_Arduino802154Interface_H
 #define I32CTT_Arduino802154Interface_H
 
+#ifdef ARDUINO
+#define IEEE_802154_MTU 106
+
 class I32CTT_Arduino802154Interface: public I32CTT_Interface {
   public:
+    I32CTT_Arduino802154Interface();
+    ~I32CTT_Arduino802154Interface();
     void init();
     void update();
     uint8_t available();
+    uint8_t data_available();
     void send();
+    uint16_t get_MTU();
 };
+
+#endif
 
 #endif

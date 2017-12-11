@@ -19,6 +19,8 @@
 #ifndef I32CTT_NullInterface_H
 #define I32CTT_NullInterface_H
 
+#define I32CTT_MAX_MAC_PHY 100 // Should not be zero
+
 class I32CTT_NullInterface: public I32CTT_Interface {
   public:
     I32CTT_NullInterface();
@@ -26,6 +28,7 @@ class I32CTT_NullInterface: public I32CTT_Interface {
     void init();
     void update();
     uint8_t available();
+    uint8_t data_available();
     void send();
     uint16_t get_MTU();
 };

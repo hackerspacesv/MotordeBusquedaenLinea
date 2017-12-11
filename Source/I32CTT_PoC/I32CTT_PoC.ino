@@ -24,24 +24,26 @@
  */
 // Utilizamos string.h para facilitar el formato de salida de Serie.
 #include "I32CTT.h"
-#include "I32CTT_NullDriver.h"
+#include "I32CTT_NullEndpoint.h"
 #include "I32CTT_ArduinoStreamInterface.h"
-#include "MBL_ManualDriver.h"
+#include "I32CTT_Arduino802154Interface.h"
+#include "MBL_ManualEndpoint.h"
 
 I32CTT_Controller controller(8);
 
 //I32CTT_NullInterface myInterface;
 I32CTT_ArduinoStreamInterface serialInterface(Serial);
-I32CTT_NullDriver idleDriver(I32CTT_ModeDriver::str2name("NUL"));
-MBL_ManualDriver manualDriver(I32CTT_ModeDriver::str2name("MAN"));
+I32CTT_Arduino802154Interface ieee802154;
+I32CTT_NullEndpoint idleEndpoint(I32CTT_Endpoint::str2id("NUL"));
+MBL_ManualEndpoint manualEndpoint(I32CTT_Endpoint::str2id("MAN"));
 
 void setup() {
   while(!Serial);
   Serial.begin(9600);
-  controller.set_interface(serialInterface);
-  controller.add_mode_driver(idleDriver);
-  controller.add_mode_driver(manualDriver);
-  manualDriver.enable();
+  controller.set_interface(ieee802154);
+  controller.add_mode_driver(idleEndpoint);
+  controller.add_mode_driver(manualEndpoint);
+  manualEndpoint.write(MBL_Registers::IS_ENABLED, HIGH);
   controller.enable_scheduler();
   controller.init();
   Serial.println("Running...");
@@ -51,9 +53,9 @@ unsigned long t_elapsed = 0;
 void loop() {
   // put your main code here, to run repeatedly:
   controller.run();
-
+/*
   if((millis()-t_elapsed)>1000) {
-    
+    Serial.println("Trying to send..");
     controller.master.set_mode(1);
     controller.master.read_record({1});
     controller.master.read_record({2});
@@ -66,5 +68,5 @@ void loop() {
     controller.master.try_send();
     
     t_elapsed = millis();
-  }
+  }*/
 }

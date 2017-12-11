@@ -41,6 +41,11 @@ void I32CTT_NullInterface::update() {
 
 uint8_t I32CTT_NullInterface::available() {
   // Do nothing
+  return 1;
+}
+
+uint8_t I32CTT_NullInterface::data_available() {
+  // Do nothing
   return 0;
 }
 

@@ -1,7 +1,7 @@
 /*
  * 
  * This file is part of I32CTT (Integer 32-bit Control & Telemetry Transport).
- * Copyright (C) 2017 Mario Gomez.
+ * Copyright (C) 2017 Mario Gomez / Hackerspace San Salvador.
  * 
  * I32CTT is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #ifndef I32CTT_H
 #define I32CTT_H
 
-#define I32CTT_MAX_MAC_PHY 100 // Used by the NullIntefface
 #define MAX_MODE_COUNT 64
 
 // TODO: Check for memory leaks
@@ -39,7 +38,7 @@ enum CMD_t {
   CMD_LSTA = 0x06,
   CMD_FND  = 0x07,
   CMD_FNDA = 0x08,
-  CMD_RES  = 0x7F // Reserved for internal OPs
+  CMD_RES  = 0xFF // Reserver for unknow OPs
 };
 
 enum MASTER_STATE_t {
@@ -63,6 +62,18 @@ struct __attribute__((__packed__)) I32CTT_Reg {
   uint16_t reg;
 };
 
+struct __attribute__((__packed__)) I32CTT_ListHeader {
+  uint8_t cmd;
+  uint8_t next_endpoint;
+  uint8_t max_records;
+};
+
+struct __attribute__((__packed__)) I32CTT_ListHeaderAnswer {
+  uint8_t cmd;
+  uint8_t last_endpoint;
+  uint8_t next_endpoint;
+};
+
 class I32CTT_Interface {
   public:
     uint8_t *rx_buffer;
@@ -72,24 +83,22 @@ class I32CTT_Interface {
     virtual void init()=0;
     virtual void update()=0;
     virtual uint8_t available()=0;
+    virtual uint8_t data_available()=0;
     virtual void send()=0;
     virtual uint16_t get_MTU()=0;
 };
 
-class I32CTT_ModeDriver {
+class I32CTT_Endpoint {
   public:
-    I32CTT_ModeDriver(uint32_t driver_name);
+    I32CTT_Endpoint(uint32_t driver_name);
     virtual void init()=0;
     virtual uint32_t read(uint16_t addr)=0;
     virtual uint16_t write(uint16_t addr, uint32_t data)=0;
     virtual void update()=0;
-    virtual uint8_t enabled() = 0;
-    virtual void enable() = 0;
-    virtual void disable() = 0;
-    static uint32_t str2name(const char *str);
-    uint32_t get_name();
+    static uint32_t str2id(const char *str);
+    uint32_t get_id();
   protected:
-    uint32_t driver_name;
+    uint32_t id;
 };
 
 class I32CTT_Controller {
@@ -103,9 +112,10 @@ class I32CTT_Controller {
         uint8_t read_record(I32CTT_Reg reg);
         uint8_t try_send();
         uint8_t available(uint8_t mode);
+        uint8_t max_records(CMD_t cmd_type);
         uint8_t records_available();
         I32CTT_RegData read(uint8_t pos);
-        
+
       private:
         I32CTT_Controller *controller;
         CMD_t current_cmd;
@@ -113,13 +123,15 @@ class I32CTT_Controller {
         uint8_t mode_requested;
         uint8_t records;
         uint8_t data_available;
+
+      friend class I32CTT_Controller;
     };
 
     I32CTT_Controller(uint8_t total_modes);
 
     MasterInterface master;
     uint8_t set_interface(I32CTT_Interface &iface);
-    uint8_t add_mode_driver(I32CTT_ModeDriver &drv);
+    uint8_t add_mode_driver(I32CTT_Endpoint &drv);
     void init();
     void run();
     void enable_scheduler();
@@ -135,11 +147,12 @@ class I32CTT_Controller {
   private:
     void parse(uint8_t *buffer, uint8_t buffsize);
     uint8_t valid_size(uint8_t cmd_type, uint8_t buffsize);
-    I32CTT_ModeDriver **drivers;
+    I32CTT_Endpoint **drivers;
     I32CTT_Interface *interface;
     uint8_t total_modes;
     uint8_t modes_set;
     uint8_t scheduler_enabled;
+
   friend class MasterInterface;
 };
 #endif

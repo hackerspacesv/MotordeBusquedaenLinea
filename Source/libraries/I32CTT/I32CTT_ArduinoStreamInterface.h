@@ -1,7 +1,7 @@
 /*
  * 
  * This file is part of I32CTT (Integer 32-bit Control & Telemetry Transport).
- * Copyright (C) 2017 Mario Gomez.
+ * Copyright (C) 2017 Mario Gomez / Hackerspace San Salvador.
  * 
  * I32CTT is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #ifdef ARDUINO
 #define SER_BUFF_SIZE 126
+#define SER_MTU_SIZE 100
 
 class I32CTT_ArduinoStreamInterface: public I32CTT_Interface {
   public:
@@ -29,13 +30,14 @@ class I32CTT_ArduinoStreamInterface: public I32CTT_Interface {
     void init();
     void update();
     uint8_t available();
+    uint8_t data_available();
     void send();
     uint16_t get_MTU();
   private:
     Stream *port;
     void process_buffer();
-    uint8_t data_available = 0;
-    uint8_t serial_buffer[SER_BUFF_SIZE];
+    uint8_t d_available = 0;
+    uint8_t *serial_buffer;
     uint16_t serial_size = 0;
 };
 

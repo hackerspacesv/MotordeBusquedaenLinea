@@ -1,14 +1,13 @@
 /*
  * 
  * This file is part of I32CTT (Integer 32-bit Control & Telemetry Transport).
- * Copyright (C) 2017 Mario Gomez.
+ * Copyright (C) 2017 Mario Gomez / Hackerspace San Salvador.
  * 
  * I32CTT is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
-    uint8_t data_available;
+ *
  * I32CTT is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -51,12 +50,12 @@ uint8_t I32CTT_Controller::MasterInterface::write_record(I32CTT_RegData reg_data
   this->state = MASTER_STATE_t::PREPARE;
   if(this->current_cmd!=CMD_W) {
     this->current_cmd = CMD_W;
-    this->controller->interface->tx_buffer[0]  = this->current_cmd<<1;
+    this->controller->interface->tx_buffer[0]  = this->current_cmd;
     this->records = 0;
   }
   I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg_data.reg, CMD_W, this->records);
   I32CTT_Controller::put_data(this->controller->interface->tx_buffer, reg_data.data, CMD_W, this->records);
-  
+ 
   return result; // TODO: Check if register was added based on buffer size
 }
 
@@ -67,7 +66,7 @@ uint8_t I32CTT_Controller::MasterInterface::read_record(I32CTT_Reg reg) {
   this->state = MASTER_STATE_t::PREPARE;
   if(this->current_cmd!=CMD_R) {
     this->current_cmd = CMD_R;
-    this->controller->interface->tx_buffer[0]  = this->current_cmd<<1;
+    this->controller->interface->tx_buffer[0]  = this->current_cmd;
     this->records = 0;
   }
   I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg.reg, CMD_R, this->records);
@@ -120,10 +119,10 @@ uint8_t I32CTT_Controller::MasterInterface::records_available() {
 
 I32CTT_RegData I32CTT_Controller::MasterInterface::read(uint8_t idx) {
   I32CTT_RegData result;
-  
+
   result.reg = get_reg(this->controller->interface->rx_buffer, this->mode_requested, idx);
   result.reg = get_data(this->controller->interface->rx_buffer, this->mode_requested, idx);
-  
+
   return result;
 }
 
@@ -138,22 +137,22 @@ I32CTT_RegData I32CTT_Controller::MasterInterface::read(uint8_t idx) {
  * \param[in] mode_id  Identificador del driver. Nota: 
  *          el controlador no verifica que sea único.
  */
-I32CTT_ModeDriver::I32CTT_ModeDriver(uint32_t driver_name) {
-  this->driver_name = driver_name;
+I32CTT_Endpoint::I32CTT_Endpoint(uint32_t /*id*/) {
+  this->id = id;
 }
 
-uint32_t I32CTT_ModeDriver::get_name() {
-  return this->driver_name;
+uint32_t I32CTT_Endpoint::get_id() {
+  return this->id;
 }
 
-uint32_t I32CTT_ModeDriver::str2name(const char *str) {
+uint32_t I32CTT_Endpoint::str2id(const char *str) {
   if(strlen(str)!=3)
     return 0;
+
   uint32_t result = *((uint32_t*)str);
 
   return result;
 }
-
 
 void I32CTT_Controller::enable_scheduler() {
   this->scheduler_enabled = 1;
@@ -172,7 +171,7 @@ I32CTT_Controller::I32CTT_Controller(uint8_t total_modes) {
   this->interface = 0;
   this->total_modes = total_modes;
   this->modes_set = 0;
-  this->drivers = new I32CTT_ModeDriver*[total_modes]; // (I32CTT_ModeDriver**)malloc((sizeof(I32CTT_ModeDriver*)*total_modes));
+  this->drivers = new I32CTT_Endpoint*[total_modes]; // (I32CTT_Endpoint**)malloc((sizeof(I32CTT_Endpoint*)*total_modes));
   this->master = MasterInterface(this);
   for(int i=0;i<this->total_modes;i++) {
     this->drivers[i] = NULL;
@@ -198,12 +197,12 @@ uint8_t I32CTT_Controller::set_interface(I32CTT_Interface &iface) {
  * \brief Agrega un nuevo driver de modo.
  *        Este método agrega una nueva instancia del driver de modo
  *        a la lista interna de modos. Espera una instancia de
- *        I32CTT_ModeDriver. Actualmente se soporta un máximo de
+ *        I32CTT_Endpoint. Actualmente se soporta un máximo de
  *        63 modos diferentes de funcionamiento. El modo 0 siempre
  *        corresponde al modo "Descanso" (Idle).
- * \param drv Instancia de I32CTT_ModeDriver para agregar a la lista.
+ * \param drv Instancia de I32CTT_Endpoint para agregar a la lista.
  */
-uint8_t I32CTT_Controller::add_mode_driver(I32CTT_ModeDriver &drv) {
+uint8_t I32CTT_Controller::add_mode_driver(I32CTT_Endpoint &drv) {
   if(this->modes_set >= this->total_modes)
     return 0;
 
@@ -243,7 +242,7 @@ void I32CTT_Controller::run() {
   // Look for network events
   if(this->interface != 0) {
     this->interface->update();
-    if(this->interface->available()) {
+    if(this->interface->data_available()) {
       Serial.println("Data available");
       this->parse(this->interface->rx_buffer, this->interface->rx_size);
     }
@@ -251,7 +250,7 @@ void I32CTT_Controller::run() {
 
   if(this->scheduler_enabled) {
     for(int i=0;i < this->modes_set; i++) {
-      if(this->drivers[i] != 0 && this->drivers[i]->enabled()) {
+      if(this->drivers[i] != 0) {
         this->drivers[i]->update();
       }
     }
@@ -430,7 +429,7 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
   if(buffsize<sizeof(I32CTT_Header)) // This neither.
     return;
 
-  uint8_t cmd = buffer[0]>>1;
+  uint8_t cmd = buffer[0];
   uint8_t mode = buffer[1];
 
   Serial.print("CMD: ");
@@ -451,8 +450,8 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
 
   if((this->interface != NULL) && (this->drivers[mode] !=  NULL)) {
     Serial.println("Calling driver");
-    I32CTT_ModeDriver *driver = this->drivers[mode];
-    
+    I32CTT_Endpoint *driver = this->drivers[mode];
+
     switch(cmd) {
       case CMD_R:
         Serial.print("Buffer size: ");
@@ -462,7 +461,7 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         this->interface->tx_size = sizeof(I32CTT_Header)+records*sizeof(I32CTT_RegData);
         this->interface->tx_buffer[0] = CMD_AR;
         this->interface->tx_buffer[1] = mode;
-        
+
         for(int i=0;i<records;i++) {
           uint32_t reg = get_reg(buffer, cmd, i);
           Serial.print("Register: ");
@@ -475,7 +474,8 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         break;
       case CMD_AR:
         // Forward to response handler
-        //this->data_available = true;
+        this->master.mode_requested = cmd;
+        this->master.data_available = true;
         break;
       case CMD_W:
         Serial.print("Buffer size: ");
@@ -494,11 +494,18 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
           driver->write(reg, data);
           put_reg(this->interface->tx_buffer, reg, CMD_AW, i);
         }
-
         this->interface->send();
         break;
       case CMD_AW:
         // Forward to response handler
+        break;
+      case CMD_LST:
+        break;
+      case CMD_LSTA:
+        break;
+      case CMD_FND:
+        break;
+      case CMD_FNDA:
         break;
       default:
         break;
