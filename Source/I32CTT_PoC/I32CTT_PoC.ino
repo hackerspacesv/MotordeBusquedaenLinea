@@ -40,6 +40,9 @@ MBL_ManualEndpoint manualEndpoint(I32CTT_Endpoint::str2id("MAN"));
 void setup() {
   while(!Serial);
   Serial.begin(9600);
+  ieee802154.set_pan_id(0xCAFE);
+  ieee802154.set_short_addr(0x0100);
+  ieee802154.set_channel(C2480);
   controller.set_interface(ieee802154);
   controller.add_mode_driver(idleEndpoint);
   controller.add_mode_driver(manualEndpoint);
