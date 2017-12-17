@@ -88,9 +88,9 @@ uint8_t I32CTT_Controller::MasterInterface::try_send() {
     default:
       break;
   }
-  while(this->controller->interface->tx_size>0) {
+  do {
     this->controller->interface->send();
-  }
+  } while(this->controller->interface->tx_size>0);
 
   this->state = MASTER_STATE_t::SENT;
   return this->state;

@@ -20,8 +20,9 @@
 #define I32CTT_Arduino802154Interface_H
 
 #ifdef ARDUINO
-#define IEEE_802154_MTU 106
+#define IEEE_802154_MTU 116
 #define PSDU_SIZE 127
+#define TX_POLL_TIMEOUT 59
 
 #ifndef SPI_H
 #include <SPI.h>
@@ -35,6 +36,18 @@
 #define PHY_MONITOR_TRX_STATUS 1<<2
 #define PHY_MONITOR_PHY_RSSI   2<<2
 #define PHY_MONITOR_IRQ_STATUS 3<<2
+#define TX_AUTO_CRC_ON         1<<5
+
+#define IRQ_POLLING_EN         1<<1
+
+#define IRQ_0_PLL_LOCK         1
+#define IRQ_1_PLL_UNLOCK       1<<1
+#define IRQ_2_RX_START         1<<2
+#define IRQ_3_TRX_END          1<<3
+#define IRQ_4_CCA_ED_DONE      1<<4
+#define IRQ_5_AMI              1<<5
+#define IRQ_6_TRX_UR           1<<6
+#define IRQ_7_BAT_LOW          1<<7
 
 enum IEEE_802154_FRAME_TYPE {
   BEACON = 0,
@@ -43,10 +56,29 @@ enum IEEE_802154_FRAME_TYPE {
   MAC_CMD
 };
 
+enum IEEE_802154_SEC {
+  SEC_DISABLED = 0,
+  SEC_ENABLED
+};
+
+enum IEEE_802154_FRAME_PENDING {
+  NOT_PENDING_FRAME = 0,
+  PENDING_FRAME
+};
+
+enum IEEE_802154_ACK_REQUEST {
+  ACK_DISABLED = 0,
+  ACK_ENABLED
+};
+
+enum IEEE_802154_PAN_COMPRESSION {
+  NO_PAN_ID_COMPRESSION = 0,
+  PAN_ID_COMPRESSION
+};
+
 enum IEEE_802154_ADDR_MODE {
   PANID_ADDR_NOT_PRES = 0,
-  RES,
-  SHORT_ADDR,
+  SHORT_ADDR = 2,
   EXT_ADDR
 };
 
@@ -55,7 +87,7 @@ enum IEEE_802154_FRAME_VER {
   IEEE_802154_2006
 };
 
-struct IEEE_802154_FRAME {
+struct __attribute__((__packed__)) IEEE_802154_FRAME_FCF {
   uint frame_type : 3;
   uint sec_enabled : 1;
   uint frame_pending : 1;
@@ -65,7 +97,14 @@ struct IEEE_802154_FRAME {
   uint dst_addr_mode : 2;
   uint frame_ver : 2;
   uint src_addr_mode : 2;
-  uint8_t sec_num;
+};
+
+enum AT86RF233_TRAC_STATUS {
+  TRAC_SUCCESS = 0,
+  TRAC_SUCCESS_DATA_PENDING,
+  TRAC_CHANNEL_ACCESS_FAILURE = 0x03,
+  TRAC_NO_ACK = 0x05,
+  TRAC_INVALID = 0x07
 };
 
 enum AT86RF233_TRX_STATUS {
@@ -175,6 +214,7 @@ class I32CTT_Arduino802154Interface: public I32CTT_Interface {
     ~I32CTT_Arduino802154Interface();
     void set_pan_id(uint16_t pan_id);
     void set_short_addr(uint16_t short_addr);
+    void set_dst_addr(uint16_t short_addr);
     void set_channel(IEEE_802154_CHANNEL channel);
     void init();
     void update();
@@ -202,8 +242,13 @@ class I32CTT_Arduino802154Interface: public I32CTT_Interface {
     uint8_t radio_enabled;
     uint8_t current_state;
     uint16_t short_addr;
+    uint16_t dst_addr;
     uint16_t pan_id;
     uint8_t channel;
+    uint8_t d_available;
+    uint8_t secnum;
+    uint64_t last_try;
+    uint8_t package_queued;
     SPISettings spi_settings;
 };
 

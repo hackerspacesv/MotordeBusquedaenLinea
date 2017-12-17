@@ -40,10 +40,13 @@ MBL_ManualEndpoint manualEndpoint(I32CTT_Endpoint::str2id("MAN"));
 void setup() {
   while(!Serial);
   Serial.begin(9600);
+  
   ieee802154.set_pan_id(0xCAFE);
   ieee802154.set_short_addr(0x0100);
   ieee802154.set_channel(C2480);
+  ieee802154.set_dst_addr(0x0200);
   controller.set_interface(ieee802154);
+  
   controller.add_mode_driver(idleEndpoint);
   controller.add_mode_driver(manualEndpoint);
   manualEndpoint.write(MBL_Registers::IS_ENABLED, HIGH);
@@ -56,13 +59,14 @@ unsigned long t_elapsed = 0;
 void loop() {
   // put your main code here, to run repeatedly:
   controller.run();
-/*
-  if((millis()-t_elapsed)>1000) {
+
+  if((millis()-t_elapsed)>1000) {/*
+    Serial.println("I'm alive");
     Serial.println("Trying to send..");
     controller.master.set_mode(1);
     controller.master.read_record({1});
     controller.master.read_record({2});
-    controller.master.read_record({3});
+    controller.master.read_record({3}); 
     controller.master.try_send();
 
     controller.master.set_mode(0);
@@ -70,6 +74,6 @@ void loop() {
     controller.master.write_record({2,0x1000000});
     controller.master.try_send();
     
-    t_elapsed = millis();
-  }*/
+    t_elapsed = millis();*/
+  }
 }
