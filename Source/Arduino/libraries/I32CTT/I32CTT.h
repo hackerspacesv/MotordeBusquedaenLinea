@@ -85,6 +85,7 @@ class I32CTT_Interface {
     virtual uint8_t available()=0;
     virtual uint8_t data_available()=0;
     virtual void send()=0;
+    virtual void send_to_dst();
     virtual uint16_t get_MTU()=0;
 };
 

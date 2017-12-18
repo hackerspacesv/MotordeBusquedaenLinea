@@ -221,6 +221,8 @@ class I32CTT_Arduino802154Interface: public I32CTT_Interface {
     uint8_t available();
     uint8_t data_available();
     void send();
+    void send_to_dst();
+    void send_to_addr(uint16_t addr);
     uint16_t get_MTU();
   private:
     uint8_t *frame_buffer;
@@ -243,10 +245,11 @@ class I32CTT_Arduino802154Interface: public I32CTT_Interface {
     uint8_t current_state;
     uint16_t short_addr;
     uint16_t dst_addr;
+    uint16_t last_addr;
     uint16_t pan_id;
     uint8_t channel;
     uint8_t d_available;
-    uint8_t secnum;
+    uint8_t seq_num;
     uint64_t last_try;
     uint8_t package_queued;
     SPISettings spi_settings;

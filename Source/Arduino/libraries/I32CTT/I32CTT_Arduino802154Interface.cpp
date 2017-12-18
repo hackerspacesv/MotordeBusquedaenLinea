@@ -146,7 +146,7 @@ void I32CTT_Arduino802154Interface::init() {
   digitalWrite(rst_pin, HIGH);
   pinMode(irq_pin, INPUT);
   
-  secnum = map(0,1024, 0, 255, analogRead(A8));
+  seq_num = map(0,1024, 0, 255, analogRead(A8));
   
   SPI.begin();
   this->spi_settings = SPISettings(100000, MSBFIRST, SPI_MODE0);
@@ -741,7 +741,10 @@ void I32CTT_Arduino802154Interface::update() {
           response_fcf.src_addr_mode == SHORT_ADDR
         ) {
           this->rx_size = phr-11;
+          // Copy payload
           memcpy(this->rx_buffer, this->frame_buffer+10, this->rx_size);
+          // Copy source address
+          memcpy(&this->last_addr, this->frame_buffer+8, sizeof(uint16_t));
           this->d_available = true;
         }
         reg_read(IRQ_STATUS); // Clear interrupt status
@@ -775,6 +778,22 @@ uint8_t I32CTT_Arduino802154Interface::data_available() {
 }
 
 void I32CTT_Arduino802154Interface::send() {
+  if(this->last_addr != 0) {
+    this->send_to_addr(this->last_addr);
+  } else {
+    // Here to prevent locks and
+    // broadcast responses
+    this->tx_size = 0;
+    this->package_queued = 0;
+  }
+}
+
+void I32CTT_Arduino802154Interface::send_to_dst() {
+  this->send_to_addr(this->dst_addr);
+}
+
+
+void I32CTT_Arduino802154Interface::send_to_addr(uint16_t addr) {
   char str_fmt[3];
   update(); // try to update before send.
   
@@ -785,7 +804,7 @@ void I32CTT_Arduino802154Interface::send() {
   if(available()) {
     frame_pos = 0;
 
-    secnum++;
+    seq_num++;
 
     IEEE_802154_FRAME_FCF fcf;
 
@@ -806,15 +825,15 @@ void I32CTT_Arduino802154Interface::send() {
     memcpy(frame_buffer+frame_pos, &fcf, sizeof(IEEE_802154_FRAME_FCF));
     frame_pos += sizeof(IEEE_802154_FRAME_FCF); // FCF
 
-    memcpy(frame_buffer+frame_pos, &secnum, sizeof(uint8_t));
+    memcpy(frame_buffer+frame_pos, &seq_num, sizeof(uint8_t));
     frame_pos += sizeof(uint8_t); // Sequence Number
 
     memcpy(frame_buffer+frame_pos, &pan_id, sizeof(uint16_t));
-    frame_pos += sizeof(uint16_t); // Source PAN ID
-    memcpy(frame_buffer+frame_pos, &dst_addr, sizeof(uint16_t));
-    frame_pos += sizeof(uint16_t); // Source short address
-    memcpy(frame_buffer+frame_pos, &short_addr, sizeof(uint16_t));
+    frame_pos += sizeof(uint16_t); // Destination PAN ID
+    memcpy(frame_buffer+frame_pos, &addr, sizeof(uint16_t));
     frame_pos += sizeof(uint16_t); // Destination short address
+    memcpy(frame_buffer+frame_pos, &short_addr, sizeof(uint16_t));
+    frame_pos += sizeof(uint16_t); // Source short address
 
     memcpy(frame_buffer+frame_pos, this->tx_buffer, this->tx_size);
     frame_pos += this->tx_size;
@@ -835,7 +854,7 @@ void I32CTT_Arduino802154Interface::send() {
     Serial.print("\r\n");
 
     Serial.print("Sequence: ");
-    Serial.println(secnum, DEC);
+    Serial.println(seq_num, DEC);
     this->last_try = millis();
     this->package_queued = true;
     fb_write(this->frame_buffer);

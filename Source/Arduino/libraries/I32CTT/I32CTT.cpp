@@ -23,6 +23,9 @@
 #include <Arduino.h>
 #include <stdarg.h>
 
+void I32CTT_Interface::send_to_dst() {
+  this->send();
+}
 
 I32CTT_Controller::MasterInterface::MasterInterface() {
   this->controller = NULL;
@@ -41,7 +44,7 @@ I32CTT_Controller::MasterInterface::MasterInterface(I32CTT_Controller *controlle
 }
 
 void I32CTT_Controller::MasterInterface::set_mode(uint8_t mode) {
-  this->controller->interface->tx_buffer[1] = mode<<1;
+  this->controller->interface->tx_buffer[1] = mode;
 }
 
 uint8_t I32CTT_Controller::MasterInterface::write_record(I32CTT_RegData reg_data) {
@@ -55,7 +58,9 @@ uint8_t I32CTT_Controller::MasterInterface::write_record(I32CTT_RegData reg_data
   }
   I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg_data.reg, CMD_W, this->records);
   I32CTT_Controller::put_data(this->controller->interface->tx_buffer, reg_data.data, CMD_W, this->records);
- 
+
+  this->records++;
+
   return result; // TODO: Check if register was added based on buffer size
 }
 
@@ -70,6 +75,8 @@ uint8_t I32CTT_Controller::MasterInterface::read_record(I32CTT_Reg reg) {
     this->records = 0;
   }
   I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg.reg, CMD_R, this->records);
+
+  this->records++;
 
   return result;
 }
