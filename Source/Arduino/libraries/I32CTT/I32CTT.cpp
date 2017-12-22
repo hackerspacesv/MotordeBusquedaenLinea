@@ -49,13 +49,14 @@ void I32CTT_Controller::MasterInterface::set_mode(uint8_t mode) {
 
 uint8_t I32CTT_Controller::MasterInterface::write_record(I32CTT_RegData reg_data) {
   uint8_t result = 1;
-  
-  this->state = MASTER_STATE_t::PREPARE;
-  if(this->current_cmd!=CMD_W) {
+
+  if(this->current_cmd!=CMD_W || this->state != MASTER_STATE_t::PREPARE) {
     this->current_cmd = CMD_W;
     this->controller->interface->tx_buffer[0]  = this->current_cmd;
     this->records = 0;
   }
+  this->state = MASTER_STATE_t::PREPARE;
+
   I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg_data.reg, CMD_W, this->records);
   I32CTT_Controller::put_data(this->controller->interface->tx_buffer, reg_data.data, CMD_W, this->records);
 
@@ -64,20 +65,20 @@ uint8_t I32CTT_Controller::MasterInterface::write_record(I32CTT_RegData reg_data
   return result; // TODO: Check if register was added based on buffer size
 }
 
-uint8_t I32CTT_Controller::MasterInterface::read_record(I32CTT_Reg reg) {
+uint8_t I32CTT_Controller::MasterInterface::read_record(uint16_t reg) {
   uint8_t result = 0;
+  Serial.println("Pushing record");
   // Enviar comandos al tx_buffer
-  
-  this->state = MASTER_STATE_t::PREPARE;
-  if(this->current_cmd!=CMD_R) {
+
+  if(this->current_cmd!=CMD_R || this->state != MASTER_STATE_t::PREPARE) {
     this->current_cmd = CMD_R;
     this->controller->interface->tx_buffer[0]  = this->current_cmd;
     this->records = 0;
   }
-  I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg.reg, CMD_R, this->records);
+  this->state = MASTER_STATE_t::PREPARE;
+  I32CTT_Controller::put_reg(this->controller->interface->tx_buffer, reg, CMD_R, this->records);
 
   this->records++;
-
   return result;
 }
 
@@ -96,7 +97,7 @@ uint8_t I32CTT_Controller::MasterInterface::try_send() {
       break;
   }
   do {
-    this->controller->interface->send();
+    this->controller->interface->send_to_dst();
   } while(this->controller->interface->tx_size>0);
 
   this->state = MASTER_STATE_t::SENT;
@@ -106,7 +107,7 @@ uint8_t I32CTT_Controller::MasterInterface::try_send() {
 
 uint8_t I32CTT_Controller::MasterInterface::available(uint8_t mode) {
   uint8_t result;
-  
+
   if(mode!=this->mode_requested) {
     result = false;
   } else {
@@ -124,11 +125,11 @@ uint8_t I32CTT_Controller::MasterInterface::records_available() {
   return result;
 }
 
-I32CTT_RegData I32CTT_Controller::MasterInterface::read(uint8_t idx) {
+I32CTT_RegData I32CTT_Controller::MasterInterface::read_RegData(uint8_t idx) {
   I32CTT_RegData result;
 
   result.reg = get_reg(this->controller->interface->rx_buffer, this->mode_requested, idx);
-  result.reg = get_data(this->controller->interface->rx_buffer, this->mode_requested, idx);
+  result.data = get_data(this->controller->interface->rx_buffer, this->mode_requested, idx);
 
   return result;
 }
@@ -257,9 +258,7 @@ void I32CTT_Controller::run() {
 
   if(this->scheduler_enabled) {
     for(int i=0;i < this->modes_set; i++) {
-      if(this->drivers[i] != 0) {
-        this->drivers[i]->update();
-      }
+      this->drivers[i]->update();
     }
   }
 }
@@ -285,6 +284,11 @@ uint8_t I32CTT_Controller::valid_size(uint8_t cmd_type, uint8_t buffsize) {
      // Check for header (1-byte) + (1-byte) [(Addr (2-byte) + Data (4-byte) ...]
      min_size = sizeof(I32CTT_Header);
      result = (buffsize>min_size) && ((buffsize-sizeof(I32CTT_Header))%sizeof(I32CTT_RegData) == 0);
+  } else if (cmd_type == CMD_LST) {
+    result = (buffsize == (sizeof(I32CTT_CMD)+sizeof(I32CTT_Endpoint_t)));
+  } else if (cmd_type == CMD_LSTA) {
+    min_size = sizeof(I32CTT_CMD)+sizeof(I32CTT_Endpoint_t)+sizeof(I32CTT_Endpoint_t);
+    result = (buffsize>min_size) && ((buffsize-min_size)%sizeof(I32CTT_Id)==0);
   }
 
   return result;
@@ -301,13 +305,19 @@ uint8_t I32CTT_Controller::valid_size(uint8_t cmd_type, uint8_t buffsize) {
 uint8_t I32CTT_Controller::reg_count(uint8_t cmd_type, uint8_t buffsize) {
   uint8_t result = 0;
   uint8_t header_size = sizeof(I32CTT_Header);
-  
+
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
      // Check for header (1-byte) + [Addr (4-byte) ...]
      result = (buffsize-header_size)/sizeof(I32CTT_Reg);
   } else if (cmd_type == CMD_W || cmd_type == CMD_AR) {
      // Check for header (1-byte) + [(Addr (4-byte) + Data (4-byte) ...]
      result = (buffsize-header_size)/sizeof(I32CTT_RegData);
+  } else if (CMD_LSTA) {
+     result = (buffsize-(sizeof(I32CTT_CMD)+(sizeof(I32CTT_Endpoint)*2)))/sizeof(I32CTT_Id);
+  } else if (CMD_FND) {
+     result = (buffsize-sizeof(I32CTT_CMD))/sizeof(I32CTT_Id);
+  } else if (CMD_FNDA) {
+     result = (buffsize-sizeof(I32CTT_CMD))/sizeof(I32CTT_IdEndpoint);
   }
 
   return result;
@@ -327,7 +337,7 @@ uint16_t I32CTT_Controller::get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t p
   uint16_t result = 0;
   uint8_t offset = 0;
   uint8_t header_size = sizeof(I32CTT_Header);
-  
+
   if(cmd_type == CMD_R || cmd_type == CMD_AW) {
      offset = header_size+pos*sizeof(I32CTT_Reg);
   } else if (cmd_type == CMD_W || cmd_type == CMD_AR) {
@@ -408,7 +418,7 @@ void I32CTT_Controller::put_reg(uint8_t *buffer, uint16_t reg, uint8_t cmd_type,
 void I32CTT_Controller::put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos) {
   uint8_t offset = 0;
   uint8_t header_size = sizeof(I32CTT_Header);
-  
+
   if (cmd_type == CMD_W || cmd_type == CMD_AR) {
      offset = header_size+sizeof(I32CTT_Reg)+pos*sizeof(I32CTT_RegData);
   } else {
@@ -418,6 +428,64 @@ void I32CTT_Controller::put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_typ
   memcpy(buffer+offset, &data, sizeof(uint32_t));
 }
 
+void I32CTT_Controller::put_id(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos) {
+  uint8_t offset = 0;
+
+  if (cmd_type == CMD_LSTA) {
+     offset = sizeof(I32CTT_CMD)+(sizeof(I32CTT_Endpoint_t)*2)+pos*sizeof(I32CTT_Id);
+  } else if(cmd_type == CMD_FND) {
+     offset = sizeof(I32CTT_CMD)+pos*sizeof(I32CTT_Id);
+  } else if(cmd_type == CMD_FNDA) {
+     offset = sizeof(I32CTT_CMD)+pos*sizeof(I32CTT_IdEndpoint);
+  } else {
+    return;
+  }
+
+  memcpy(buffer+offset, &data, sizeof(I32CTT_Id));
+}
+
+uint32_t I32CTT_Controller::get_id(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
+  uint32_t result = 0;
+  uint8_t offset = 0;
+
+  if (cmd_type == CMD_LSTA) {
+     offset = sizeof(I32CTT_CMD)+(sizeof(I32CTT_Endpoint_t)*2)+pos*sizeof(I32CTT_Id);
+  } else if(cmd_type == CMD_FND) {
+     offset = sizeof(I32CTT_CMD)+pos*sizeof(I32CTT_Id);
+  } else if(cmd_type == CMD_FNDA) {
+     offset = sizeof(I32CTT_CMD)+pos*sizeof(I32CTT_IdEndpoint);
+  }
+
+  memcpy(&result, buffer+offset, sizeof(I32CTT_Id));
+
+  return result;
+}
+
+void I32CTT_Controller::put_endpoint(uint8_t *buffer, uint8_t data, uint8_t cmd_type, uint8_t pos) {
+  uint8_t offset = 0;
+
+  if (cmd_type == CMD_FNDA) {
+     offset = sizeof(I32CTT_CMD)+sizeof(I32CTT_Id)+pos*sizeof(I32CTT_IdEndpoint);
+  } else {
+    return;
+  }
+
+  memcpy(buffer+offset, &data, sizeof(I32CTT_Endpoint_t));
+}
+
+
+uint8_t I32CTT_Controller::get_endpoint(uint8_t *buffer, uint8_t cmd_type, uint8_t pos) {
+  uint8_t result = 0;
+  uint8_t offset = 0;
+
+  if (cmd_type == CMD_FNDA) {
+     offset = sizeof(I32CTT_CMD)+sizeof(I32CTT_Id)+pos*sizeof(I32CTT_IdEndpoint);
+  }
+
+  memcpy(&result, buffer+offset, sizeof(I32CTT_Endpoint_t));
+
+  return result;
+}
 
 /**
  * \brief Procesa los datos recibidos por la interfaz.
@@ -436,8 +504,12 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
   if(buffsize<sizeof(I32CTT_Header)) // This neither.
     return;
 
+  uint8_t nextEndpoint = 0;
+  uint32_t nextId = 0;
+  int lst_records = 0;
   uint8_t cmd = buffer[0];
   uint8_t mode = buffer[1];
+  uint8_t id_found = 0;
 
   Serial.print("CMD: ");
   Serial.print(cmd, HEX);
@@ -504,15 +576,65 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
         this->interface->send();
         break;
       case CMD_AW:
-        // Forward to response handler
+        this->master.mode_requested = cmd;
+        this->master.data_available = true;
         break;
       case CMD_LST:
+        lst_records = 0;
+        nextEndpoint = buffer[1];
+
+        this->interface->tx_buffer[0] = CMD_LSTA;
+        this->interface->tx_buffer[1] = (this->modes_set-1);
+        this->interface->tx_buffer[2] = nextEndpoint;
+
+        if(nextEndpoint<this->modes_set) {
+          for(lst_records=0;(lst_records<5 && (nextEndpoint+lst_records)<this->modes_set);lst_records++) {
+            this->put_id(this->interface->tx_buffer, 0xFFFFFFFF, CMD_LSTA, lst_records);
+          }
+        } else {
+          this->put_id(this->interface->tx_buffer, 0xFFFFFFFF, CMD_LSTA, 0);
+          lst_records = 1;
+        }
+
+        this->interface->tx_size = sizeof(I32CTT_CMD)+(sizeof(I32CTT_Endpoint_t)*2)+lst_records*sizeof(I32CTT_Id);
+        this->interface->send();
         break;
       case CMD_LSTA:
+        // Forward to response handler
+        this->master.mode_requested = cmd;
+        this->master.data_available = true;
         break;
       case CMD_FND:
+        lst_records = 0;
+
+        this->interface->tx_buffer[0] = CMD_FNDA;
+
+        for(lst_records=0;lst_records<records;lst_records++) {
+          nextId = this->get_id(buffer, CMD_FNDA, lst_records);
+          id_found = 0;
+          for(int i = 0;i<this->modes_set;i++) {
+            if(nextId == this->drivers[i]->get_id()) {
+              nextEndpoint = i;
+              id_found = 1;
+              break;
+            }
+          }
+          if(id_found) {
+            this->put_id(this->interface->tx_buffer, nextId, CMD_FNDA, lst_records);
+            this->put_endpoint(this->interface->tx_buffer, nextEndpoint, CMD_FNDA, lst_records);
+          } else {
+            this->put_id(this->interface->tx_buffer, 0xFFFFFFFF, CMD_FNDA, lst_records);
+            this->put_endpoint(this->interface->tx_buffer, 0xFF, CMD_FNDA, lst_records);
+          }
+        }
+
+        this->interface->tx_size = sizeof(I32CTT_CMD)+lst_records*sizeof(I32CTT_IdEndpoint);
+        this->interface->send();
         break;
       case CMD_FNDA:
+        // Forward to response handler
+        this->master.mode_requested = cmd;
+        this->master.data_available = true;
         break;
       default:
         break;

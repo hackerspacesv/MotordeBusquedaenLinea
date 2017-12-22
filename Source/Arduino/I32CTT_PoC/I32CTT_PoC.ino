@@ -28,6 +28,7 @@
 #include "I32CTT_ArduinoStreamInterface.h"
 #include "I32CTT_Arduino802154Interface.h"
 #include "MBL_ManualEndpoint.h"
+#include <string.h>
 
 I32CTT_Controller controller(8);
 
@@ -42,9 +43,9 @@ void setup() {
   Serial.begin(9600);
   
   ieee802154.set_pan_id(0xCAFE);
-  ieee802154.set_short_addr(0x0100);
+  ieee802154.set_short_addr(0x0101);
   ieee802154.set_channel(C2480);
-  ieee802154.set_dst_addr(0x0200);
+  ieee802154.set_dst_addr(0x0100);
   controller.set_interface(ieee802154);
   
   controller.add_mode_driver(idleEndpoint);
@@ -56,24 +57,40 @@ void setup() {
 }
 
 unsigned long t_elapsed = 0;
+
 void loop() {
-  // put your main code here, to run repeatedly:
+  // put your main code here, to ru n repeatedly:
   controller.run();
 
-  if((millis()-t_elapsed)>1000) {/*
+  if((millis()-t_elapsed)>1000) {
+    
     Serial.println("I'm alive");
     Serial.println("Trying to send..");
+    
+    //controller.master.set_mode(1);
+    //controller.master.write_record({3, 0xAAAA});
+    //controller.master.try_send();
+    
     controller.master.set_mode(1);
-    controller.master.read_record({1});
-    controller.master.read_record({2});
-    controller.master.read_record({3}); 
-    controller.master.try_send();
-
-    controller.master.set_mode(0);
-    controller.master.write_record({1,0x1000000});
-    controller.master.write_record({2,0x1000000});
+    controller.master.read_record(0);
+    controller.master.read_record(1);
+    controller.master.read_record(2); 
     controller.master.try_send();
     
-    t_elapsed = millis();*/
+    t_elapsed = millis();
+  }
+  
+  if(controller.master.available(CMD_AW)) {
+    Serial.println("Answer received to WRITE");
+  }
+  if(controller.master.available(CMD_AR)) {
+    Serial.println("Answer received to READ");
+    for(int i=0;i<controller.master.records_available();i++) {
+      I32CTT_RegData info = controller.master.read_RegData(i);
+      Serial.print("Record: ");
+      Serial.print(info.reg, HEX);
+      Serial.print(" Data: ");
+      Serial.println(info.data, HEX);
+    }
   }
 }

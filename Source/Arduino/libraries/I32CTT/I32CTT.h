@@ -48,6 +48,11 @@ enum MASTER_STATE_t {
   SENT = 3
 };
 
+struct __attribute__((__packed__)) I32CTT_CMD {
+  uint8_t cmd;
+};
+
+
 struct __attribute__((__packed__)) I32CTT_Header {
   uint8_t cmd;
   uint8_t mode;
@@ -60,6 +65,24 @@ struct __attribute__((__packed__)) I32CTT_RegData {
 
 struct __attribute__((__packed__)) I32CTT_Reg {
   uint16_t reg;
+};
+
+struct __attribute__((__packed__)) I32CTT_Endpoint_t {
+  uint8_t endpoint;
+};
+
+struct __attribute__((__packed__)) I32CTT_EndpointId {
+  uint8_t endpoint;
+  uint32_t id;
+};
+
+struct __attribute__((__packed__)) I32CTT_Id {
+  uint32_t id;
+};
+
+struct __attribute__((__packed__)) I32CTT_IdEndpoint {
+  uint32_t id;
+  uint8_t endpoint;
 };
 
 struct __attribute__((__packed__)) I32CTT_ListHeader {
@@ -110,12 +133,12 @@ class I32CTT_Controller {
         MasterInterface(I32CTT_Controller *controller);
         void set_mode(uint8_t mode);
         uint8_t write_record(I32CTT_RegData reg_data);
-        uint8_t read_record(I32CTT_Reg reg);
+        uint8_t read_record(uint16_t reg);
         uint8_t try_send();
         uint8_t available(uint8_t mode);
         uint8_t max_records(CMD_t cmd_type);
         uint8_t records_available();
-        I32CTT_RegData read(uint8_t pos);
+        I32CTT_RegData read_RegData(uint8_t pos);
 
       private:
         I32CTT_Controller *controller;
@@ -139,11 +162,15 @@ class I32CTT_Controller {
     void disable_scheduler();
     uint8_t available(uint8_t mode);
     uint8_t records_available();
-    I32CTT_RegData read(uint8_t idx);
+    I32CTT_RegData read_RegData(uint8_t idx);
     static uint16_t get_reg(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     static uint32_t get_data(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
+    static uint32_t get_id(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
+    static uint8_t get_endpoint(uint8_t *buffer, uint8_t cmd_type, uint8_t pos);
     static void put_reg(uint8_t *buffer, uint16_t reg, uint8_t cmd_type, uint8_t pos);
     static void put_data(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos);
+    static void put_endpoint(uint8_t *buffer, uint8_t data, uint8_t cmd_type, uint8_t pos);
+    static void put_id(uint8_t *buffer, uint32_t data, uint8_t cmd_type, uint8_t pos);
     static uint8_t reg_count(uint8_t cmd_type, uint8_t buffsize);
   private:
     void parse(uint8_t *buffer, uint8_t buffsize);
