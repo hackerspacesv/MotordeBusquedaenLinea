@@ -39,13 +39,13 @@ I32CTT_NullEndpoint idleEndpoint(I32CTT_Endpoint::str2id("NUL"));
 MBL_ManualEndpoint manualEndpoint(I32CTT_Endpoint::str2id("MAN"));
 
 void setup() {
-  while(!Serial);
+  //while(!Serial);
   Serial.begin(9600);
   
   ieee802154.set_pan_id(0xCAFE);
-  ieee802154.set_short_addr(0x0101);
+  ieee802154.set_short_addr(0x0100);
   ieee802154.set_channel(C2480);
-  ieee802154.set_dst_addr(0x0100);
+  ieee802154.set_dst_addr(0x0201);
   controller.set_interface(ieee802154);
   
   controller.add_mode_driver(idleEndpoint);
@@ -65,32 +65,8 @@ void loop() {
   if((millis()-t_elapsed)>1000) {
     
     Serial.println("I'm alive");
-    Serial.println("Trying to send..");
-    
-    //controller.master.set_mode(1);
-    //controller.master.write_record({3, 0xAAAA});
-    //controller.master.try_send();
-    
-    controller.master.set_mode(1);
-    controller.master.read_record(0);
-    controller.master.read_record(1);
-    controller.master.read_record(2); 
-    controller.master.try_send();
     
     t_elapsed = millis();
   }
-  
-  if(controller.master.available(CMD_AW)) {
-    Serial.println("Answer received to WRITE");
-  }
-  if(controller.master.available(CMD_AR)) {
-    Serial.println("Answer received to READ");
-    for(int i=0;i<controller.master.records_available();i++) {
-      I32CTT_RegData info = controller.master.read_RegData(i);
-      Serial.print("Record: ");
-      Serial.print(info.reg, HEX);
-      Serial.print(" Data: ");
-      Serial.println(info.data, HEX);
-    }
-  }
+
 }

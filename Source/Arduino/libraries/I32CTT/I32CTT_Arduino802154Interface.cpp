@@ -149,7 +149,7 @@ void I32CTT_Arduino802154Interface::init() {
   seq_num = map(0,1024, 0, 255, analogRead(A8));
   
   SPI.begin();
-  this->spi_settings = SPISettings(100000, MSBFIRST, SPI_MODE0);
+  this->spi_settings = SPISettings(10000, MSBFIRST, SPI_MODE0);
 
   pn = reg_read(PART_NUM);
   Serial.println(PART_NUM, HEX);

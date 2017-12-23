@@ -19,10 +19,10 @@
 #ifndef MBL_ManualEndpoint_H
 #define MBL_ManualEndpoint_H
 
-#define MBL_M1A   5
-#define MBL_M1B   6
-#define MBL_M2A   3
-#define MBL_M2B   4
+#define MBL_M1A   6
+#define MBL_M1B   5
+#define MBL_M2A   4
+#define MBL_M2B   3
 
 enum MBL_Registers {
   ID = 0x00,
