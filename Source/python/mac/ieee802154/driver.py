@@ -1,3 +1,5 @@
+#Driver para el protocolo de mac de IEEE 802.15.4
+
 from framer import framer_ieee802154
 
 class driver_ieee802154:
@@ -13,13 +15,10 @@ class driver_ieee802154:
 
     #Traslada la configuracion al framer
     self.__framer.escr_pan_id(pan_id)
-    self.__framer.escr_dir_propia(dir_corta)
+    self.__framer.escr_dir_corta(dir_corta)
 
-  def elegir_destino(self, dir_corta):
-    self.__framer.escr_dir_remota(dir_corta)
-
-  def enviar_paquete(self, payload):
-    paquete = self.__framer.crear_mpdu(payload)
+  def enviar_paquete(self, destino, payload):
+    paquete = self.__framer.crear_mpdu(destino, payload)
     return self.__radio.enviar_paquete(paquete)
 
   def hay_paquete(self):
@@ -27,5 +26,4 @@ class driver_ieee802154:
 
   def recibir_paquete(self):
     paquete = self.__radio.recibir_paquete()
-    return paquete
-    #return self.__framer.extraer_payload(paquete)
+    return self.__framer.extraer_payload(paquete)
