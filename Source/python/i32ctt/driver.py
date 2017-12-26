@@ -4,6 +4,8 @@ from framer import framer_i32ctt
 import time
 
 class driver_i32ctt:
+  __timeout = 0.1
+
   def __init__(self, mac):
     self.__mac = mac
     self.__framer = framer_i32ctt()
@@ -30,7 +32,7 @@ class driver_i32ctt:
 
   def __recibir_respuesta(self, func):
     #Inicia el proceso de espera de respuesta, tomando el tiempo inicial
-    t_ini = time.clock()
+    t_ini = time.time()
     while True:
       if self.__mac.hay_paquete():
         origen, paquete = self.__mac.recibir_paquete()
@@ -41,9 +43,8 @@ class driver_i32ctt:
         
         #TODO: Verificar el origen antes de descodificar el paquete y retornarlo
         return func(paquete)
-        #break
 
-      if time.clock() - t_ini >= 5.0:
+      if time.time() - t_ini < self.__timeout:
         time.sleep(0.001)
+      else:
         return ()
-        #break
