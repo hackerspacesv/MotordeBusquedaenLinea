@@ -521,6 +521,11 @@ void I32CTT_Controller::parse(uint8_t *buffer, uint8_t buffsize) {
   if(!valid_size(cmd, buffsize)) // return if size invalid
     return;
   Serial.println("Valid size.");
+  
+  // return if mode not set
+  // Fixing bug reported by Joksan
+  if(mode>=this->modes_set)
+    return;
 
   uint8_t records = reg_count(cmd, buffsize);
   Serial.print("Records: ");

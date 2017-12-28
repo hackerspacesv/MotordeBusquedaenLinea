@@ -25,16 +25,16 @@
 #include <string.h>
 
 // Pines del selector de canal de multiplexor análogo. (S0: LSB)
-const int S0 = 2;
-const int S1 = 3;
-const int S2 = 4;
-const int S3 = 5;
+const int S0 = 10;
+const int S1 = 9;
+const int S2 = 7;
+const int S3 = 8;
 
 // Retardo en la lectura de los datos (ms)
 const int READ_DELAY = 100;
 
 // Pin utilizado para la lectura análoga
-const int ANALOG_IN = A0;
+const int ANALOG_IN = A1;
 
 // Buffer de texto para dar formato a los números de salida
 char txt_buffer[6];
