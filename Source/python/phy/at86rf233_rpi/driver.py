@@ -212,7 +212,7 @@ class driver_at86rf233:
     self.__gpio.output(self.__pin.SLP_TR, self.__gpio.LOW);
 
     #Espera a que el radio active la linea de interrupcion por el paquete recien enviado
-    t_ini = time.clock()
+    t_ini = time.time()
     while True:
       #Determina si el radio activo la linea de interrupcion
       if self.__gpio.input(self.__pin.IRQ) == self.__gpio.HIGH:
@@ -228,7 +228,7 @@ class driver_at86rf233:
             return False
 
       #Determina si ya elapso el tiempo maximo de espera
-      if time.clock() - t_ini >= 0.05:
+      if time.time() - t_ini >= 0.05:
         return False
 
     #Restablece el radio en modo de recepcion
