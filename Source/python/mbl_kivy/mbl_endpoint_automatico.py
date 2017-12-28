@@ -11,6 +11,16 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
   reg_vc = 3
   reg_kp = 4
   reg_kd = 5
+  reg_fd = 6
+  reg_rx = 7
+  reg_ry = 8
+  reg_nv_slot = 9
+  reg_nv_vc = 10
+  reg_nv_kp = 11
+  reg_nv_kd = 12
+  reg_nv_fd = 13
+  reg_nv_rx = 14
+  reg_nv_ry = 15
 
   def __init__(self, i32ctt, direccion_mac, endpoint, **kwargs):
     super(LayoutEndpointAutomatico, self).__init__(i32ctt, direccion_mac, endpoint, **kwargs)
@@ -40,56 +50,112 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
                           size_hint = (0.1, 0.1), pos_hint = {'x': 0.2, 'top': 1.0}))
 
     #Teclas de ajuste numerico
-    self.p_1   = Button(text = '+1.0',  size_hint = (0.1, 0.1), pos_hint = {'x': 0.7, 'top': 0.7})
-    self.m_1   = Button(text = '-1.0',  size_hint = (0.1, 0.1), pos_hint = {'x': 0.8, 'top': 0.7})
-    self.p_01  = Button(text = '+0.1',  size_hint = (0.1, 0.1), pos_hint = {'x': 0.7, 'top': 0.6})
-    self.m_01  = Button(text = '-0.1',  size_hint = (0.1, 0.1), pos_hint = {'x': 0.8, 'top': 0.6})
-    self.p_001 = Button(text = '+0.01', size_hint = (0.1, 0.1), pos_hint = {'x': 0.7, 'top': 0.5})
-    self.m_001 = Button(text = '-0.01', size_hint = (0.1, 0.1), pos_hint = {'x': 0.8, 'top': 0.5})
+    ajuste = []
+    ajuste.append({'escala': +1.0,   'pos_hint': {'x': 0.7, 'top': 0.7}})
+    ajuste.append({'escala': -1.0,   'pos_hint': {'x': 0.8, 'top': 0.7}})
+    ajuste.append({'escala': +0.1,   'pos_hint': {'x': 0.7, 'top': 0.6}})
+    ajuste.append({'escala': -0.1,   'pos_hint': {'x': 0.8, 'top': 0.6}})
+    ajuste.append({'escala': +0.01,  'pos_hint': {'x': 0.7, 'top': 0.5}})
+    ajuste.append({'escala': -0.01,  'pos_hint': {'x': 0.8, 'top': 0.5}})
+    ajuste.append({'escala': +0.001, 'pos_hint': {'x': 0.7, 'top': 0.4}})
+    ajuste.append({'escala': -0.001, 'pos_hint': {'x': 0.8, 'top': 0.4}})
 
-    self.add_widget(self.p_1)
-    self.add_widget(self.m_1)
-    self.add_widget(self.p_01)
-    self.add_widget(self.m_01)
-    self.add_widget(self.p_001)
-    self.add_widget(self.m_001)
+    for i in ajuste:
+      #Se crea el boton
+      b = Button(text = '{:+}'.format(i['escala']), size_hint = (0.1, 0.1), pos_hint = i['pos_hint'])
+      #Se anexa al boton la informacion de la escala asociada
+      b.escala = i['escala']
+      #Se asocia el evento de presion del hijo a la funcion correspondiente
+      b.bind(on_press = self.__ajustar_parametro)
+      #Se anexa el widget a este layout
+      self.add_widget(b)
 
-    self.p_1.bind(on_press = self.__ajustar_parametro)
-    self.m_1.bind(on_press = self.__ajustar_parametro)
-    self.p_01.bind(on_press = self.__ajustar_parametro)
-    self.m_01.bind(on_press = self.__ajustar_parametro)
-    self.p_001.bind(on_press = self.__ajustar_parametro)
-    self.m_001.bind(on_press = self.__ajustar_parametro)
+    #Lista de parametros
+    param = []
+    param.append({'text': 'Vc', 'reg_act': self.reg_vc, 'reg_sal': self.reg_nv_vc, 'pos_hint': {'x': 0, 'top': 0.9}})
+    param.append({'text': 'Kp', 'reg_act': self.reg_kp, 'reg_sal': self.reg_nv_kp, 'pos_hint': {'x': 0, 'top': 0.8}})
+    param.append({'text': 'Kd', 'reg_act': self.reg_kd, 'reg_sal': self.reg_nv_kd, 'pos_hint': {'x': 0, 'top': 0.7}})
+    param.append({'text': 'Fd', 'reg_act': self.reg_fd, 'reg_sal': self.reg_nv_fd, 'pos_hint': {'x': 0, 'top': 0.6}})
+    param.append({'text': 'Rx', 'reg_act': self.reg_rx, 'reg_sal': self.reg_nv_rx, 'pos_hint': {'x': 0, 'top': 0.5}})
+    param.append({'text': 'Ry', 'reg_act': self.reg_ry, 'reg_sal': self.reg_nv_ry, 'pos_hint': {'x': 0, 'top': 0.4}})
 
-    #Parametros individuales
-    self.prm_vc = LayoutParametro(text = 'Vc',
-                                  size_hint = (0.5, 0.1), pos_hint = {'x': 0, 'top': 0.9})
-    self.prm_kp = LayoutParametro(text = 'Kp',
-                                  size_hint = (0.5, 0.1), pos_hint = {'x': 0, 'top': 0.8})
-    self.prm_kd = LayoutParametro(text = 'Kd',
-                                  size_hint = (0.5, 0.1), pos_hint = {'x': 0, 'top': 0.7})
+    self.layout_param = []
+    for i in param:
+      #Se crea el layout
+      l = LayoutParametro(text = i['text'], size_hint = (0.5, 0.1), pos_hint = i['pos_hint'])
+      self.layout_param.append(l)
+      #Se anexa al layout la informacion de los registros asociados
+      l.reg_act = i['reg_act']
+      l.reg_sal = i['reg_sal']
+      #Se asocia el evento de seleccion del hijo a la funcion correspondiente
+      l.bind(on_seleccion = self.__parametro_seleccionado)
 
-    self.add_widget(self.prm_vc)
-    self.add_widget(self.prm_kp)
-    self.add_widget(self.prm_kd)
+      l.bind(on_salvar = self.__salvar_parametro)
+      l.bind(on_restaurar = self.__restaurar_parametro)
 
-    self.prm_vc.bind(on_seleccion = self.__parametro_seleccionado)
-    self.prm_kp.bind(on_seleccion = self.__parametro_seleccionado)
-    self.prm_kd.bind(on_seleccion = self.__parametro_seleccionado)
+      #Se anexa el widget a este layout
+      self.add_widget(l)
 
-    self.prm_vc.bot_sel.state = 'down'
-    self.prm_seleccionado = self.prm_vc
+    #Se marca el primer layout como seleccionado
+    self.layout_param[0].bot_sel.state = 'down'
+    self.prm_seleccionado = self.layout_param[0]
 
+    #Se anexa elevento de seleccion de este layout a la funcion correspondiente
     self.bind(seleccionado = self.__actualizar_seleccion)
 
+    slot = []
+    slot.append({'pos_hint': {'x': 0.1, 'y': 0}})
+    slot.append({'pos_hint': {'x': 0.2, 'y': 0}})
+    slot.append({'pos_hint': {'x': 0.3, 'y': 0}})
+    slot.append({'pos_hint': {'x': 0.4, 'y': 0}})
+
+    self.boton_slot = []
+    for i in slot:
+      #Se crea el boton
+      b = ToggleButton(text = str(len(self.boton_slot)), size_hint = (0.1, 0.1),
+                       pos_hint = i['pos_hint'], group = 'slot')
+      #Se anexa al boton la informacion del numero de slot
+      b.num_slot = len(self.boton_slot)
+      #Se asocia el evento de presion del hijo a la funcion correspondiente
+      b.bind(on_press = self.__seleccionar_slot)
+      #Se anexa el widget a este layout
+      self.boton_slot.append(b)
+      self.add_widget(b)
+
   def __actualizar_seleccion(self, *args):
-    registros = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint,
-                                          (self.reg_vc, self.reg_kp, self.reg_kd))
-    if registros and registros[0][0] == self.reg_vc and registros[1][0] == self.reg_kp and\
-       registros[2][0] == self.reg_kd:
-      self.prm_vc.valor = round(float(registros[0][1]) / (1 << 24), 2)
-      self.prm_kp.valor = round(float(registros[1][1]) / (1 << 24), 2)
-      self.prm_kd.valor = round(float(registros[2][1]) / (1 << 24), 2)
+    #Se prepara una lista con todas las direcciones a leer
+    direcciones = map(lambda a:a.reg_act, self.layout_param)
+
+    #Se efectua el proceso de lectura de los registros
+    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direcciones)
+    if pares:
+      #Si hubo respuesta, se obtiene la lista de direcciones leidas
+      direcciones_leidas = map(lambda a:a[0], pares)
+      if direcciones_leidas == direcciones:
+        #Si las direcciones coinciden, se obtiene la lista de datos leidos
+        datos_leidos = map(lambda a:a[1], pares)
+
+        #Se aplican los datos leidos en el orden correlativo que se recibieron
+        for i in range(len(self.layout_param)):
+          self.layout_param[i].valor_act = round(float(datos_leidos[i]) / (1 << 24), 3)
+
+    direcciones = map(lambda a:a.reg_sal, self.layout_param)
+    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direcciones)
+    if pares:
+      direcciones_leidas = map(lambda a:a[0], pares)
+      if direcciones_leidas == direcciones:
+        datos_leidos = map(lambda a:a[1], pares)
+        for i in range(len(self.layout_param)):
+          self.layout_param[i].valor_sal = round(float(datos_leidos[i]) / (1 << 24), 3)
+
+    direccion = (self.reg_nv_slot,)
+    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direccion)
+    if pares:
+      direccion_leida = pares[0][0]
+      if direccion_leida == direccion[0]:
+        dato_leido = pares[0][1]
+        if dato_leido < len(self.boton_slot):
+          self.boton_slot[dato_leido].state = 'down'
 
   def __boton_presionado(self, boton):
     if boton is self.boton_arranque:
@@ -107,38 +173,59 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
   def __parametro_seleccionado(self, parametro):
     self.prm_seleccionado = parametro
 
-  def __ajustar_parametro(self, boton):
-    if boton is self.p_1:
-      self.prm_seleccionado.valor = round(self.prm_seleccionado.valor + 1, 2)
-    if boton is self.m_1:
-      self.prm_seleccionado.valor = round(self.prm_seleccionado.valor - 1, 2)
-    if boton is self.p_01:
-      self.prm_seleccionado.valor = round(self.prm_seleccionado.valor + 0.1, 2)
-    if boton is self.m_01:
-      self.prm_seleccionado.valor = round(self.prm_seleccionado.valor - 0.1, 2)
-    if boton is self.p_001:
-      self.prm_seleccionado.valor = round(self.prm_seleccionado.valor + 0.01, 2)
-    if boton is self.m_001:
-      self.prm_seleccionado.valor = round(self.prm_seleccionado.valor - 0.01, 2)
+  def __salvar_parametro(self, parametro):
+    registro = parametro.reg_sal
+    valor = int(parametro.valor_act * (1 << 24))
 
-    if self.prm_seleccionado is self.prm_vc:
-      valor = int(self.prm_vc.valor * (1 << 24))
-      registro = self.reg_vc
-    if self.prm_seleccionado is self.prm_kp:
-      valor = int(self.prm_kp.valor * (1 << 24))
-      registro = self.reg_kp
-    if self.prm_seleccionado is self.prm_kd:
-      valor = int(self.prm_kd.valor * (1 << 24))
-      registro = self.reg_kd
+    direcciones_escritas = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
+                                                     ((registro, valor),))
+    if direcciones_escritas:
+      if direcciones_escritas[0] == registro:
+        parametro.valor_sal = parametro.valor_act
+
+  def __restaurar_parametro(self, parametro):
+    registro = parametro.reg_act
+    valor = int(parametro.valor_sal * (1 << 24))
+
+    direcciones_escritas = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
+                                                     ((registro, valor),))
+    if direcciones_escritas:
+      if direcciones_escritas[0] == registro:
+        parametro.valor_act = parametro.valor_sal
+
+  def __ajustar_parametro(self, boton):
+    self.prm_seleccionado.valor_act = round(self.prm_seleccionado.valor_act + boton.escala, 3)
+
+    registro = self.prm_seleccionado.reg_act
+    valor = int(self.prm_seleccionado.valor_act * (1 << 24))
 
     registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
                                           ((registro, valor),))
 
+  def __seleccionar_slot(self, boton):
+    registro = self.reg_nv_slot
+    valor = boton.num_slot
+
+    registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
+                                          ((registro, valor),))
+
+    direcciones = map(lambda a:a.reg_sal, self.layout_param)
+    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direcciones)
+    if pares:
+      direcciones_leidas = map(lambda a:a[0], pares)
+      if direcciones_leidas == direcciones:
+        datos_leidos = map(lambda a:a[1], pares)
+        for i in range(len(self.layout_param)):
+          self.layout_param[i].valor_sal = round(float(datos_leidos[i]) / (1 << 24), 3)
+
 class LayoutParametro(BoxLayout):
-  valor = NumericProperty(0)
+  valor_act = NumericProperty(0)
+  valor_sal = NumericProperty(0)
 
   def __init__(self, **kwargs):
     self.register_event_type('on_seleccion')
+    self.register_event_type('on_salvar')
+    self.register_event_type('on_restaurar')
     super(LayoutParametro, self).__init__(orientation = 'horizontal',
                                           size_hint = kwargs['size_hint'],
                                           pos_hint = kwargs['pos_hint'])
@@ -155,11 +242,14 @@ class LayoutParametro(BoxLayout):
 
     self.bot_sal = Button(text = 'Salvar')
     self.add_widget(self.bot_sal)
+    self.bot_sal.bind(on_press = self.__salvado)
 
     self.bot_res = Button(text = 'Restaurar')
     self.add_widget(self.bot_res)
+    self.bot_res.bind(on_press = self.__restaurado)
 
-    self.bind(valor = self.__valor_cambiado)
+    self.bind(valor_act = self.__valor_cambiado)
+    self.bind(valor_sal = self.__valor_cambiado)
 
   def __seleccionado(self, boton):
     if boton.state == 'down':
@@ -167,14 +257,27 @@ class LayoutParametro(BoxLayout):
     else:
       boton.state = 'down'
 
+  def __salvado(self, boton):
+    self.dispatch('on_salvar')
+
+  def __restaurado(self, boton):
+    self.dispatch('on_restaurar')
+
   def __valor_cambiado(self, *args):
-    self.txt_valor_act.text = str(self.valor)
+    self.txt_valor_act.text = str(self.valor_act)
+    self.txt_valor_sal.text = str(self.valor_sal)
 
   def on_seleccion(self, *args):
     pass
 
-  def valor_act(self):
-    return self.txt_valor_act.text
+  def on_salvar(self, *args):
+    pass
 
-  def valor_sal(self):
-    return self.txt_valor_sal.text
+  def on_restaurar(self, *args):
+    pass
+
+  #def valor_act(self):
+    #return self.txt_valor_act.text
+
+  #def valor_sal(self):
+    #return self.txt_valor_sal.text
