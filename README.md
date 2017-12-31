@@ -28,7 +28,7 @@ Esta es una guía muy rápida (e incompleta) sobre cómo hacer construir y hacer
 
 **Hardware**:
 >1. Adquiere todos los componentes especificados en el archivo *BOM.odx* en la carpeta *Design*.
->2. Corta el acrílico del chasis según los archivos de diseño provistos en la carpeta >*Desing/FreeCAD/SVG corte laser*.
+>2. Corta el acrílico del chasis según los archivos de diseño provistos en la carpeta *Design/FreeCAD/SVG corte laser*.
 >3. Fabrica las PCBs y ensambla según archivos de diseño en *Design/eagle*.
 >4. Conecta todo según especificaciones y revisa que las conexiones eléctricas no estén cruzadas o contengan falso-contactos.
 
@@ -67,4 +67,3 @@ Información de contacto
 Si deseas agregar funcionalidad adicional a MBL puedes enviar un *"pull request"* a este repositorio. De igual manera si encuentras algo que no funciona envíanos un *"issue"* para que podamos realizar las correcciones.
 
 Si estás interesado en colaborar en algo más que código fuente y diseño como por ejemplo: Generar material educativo, implementar MBL en tu centro de estudios o realizar publicaciones o investigaciones tomando como base este proyecto, puedes contactarte con el equipo de desarrollo al correo electrónico <a href="mailto:info@teubi.co">info@teubi.co</a>.
-
