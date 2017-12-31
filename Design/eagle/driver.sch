@@ -3292,9 +3292,9 @@ Switches electrical signals</description>
 <part name="SUPPLY27" library="supply2" deviceset="GND" device=""/>
 <part name="SUPPLY28" library="SparkFun-PowerSymbols" deviceset="VCC" device=""/>
 <part name="M2" library="SparkFun-Connectors" deviceset="CONN_02" device="3.5MM"/>
-<part name="C1" library="SparkFun-Capacitors" deviceset="1000UF" device="-RADIAL-5MM-25V-20%" value="1mF"/>
+<part name="C1" library="SparkFun-Capacitors" deviceset="1000UF" device="-RADIAL-5MM-25V-20%" value="1000uF"/>
 <part name="SUPPLY29" library="supply2" deviceset="GND" device=""/>
-<part name="C2" library="SparkFun-Capacitors" deviceset="1.0UF" device="-0805-25V-10%" value="1.0uF"/>
+<part name="C2" library="SparkFun-Capacitors" deviceset="1.0UF" device="-0805-25V-10%" value="10uF"/>
 <part name="S1" library="SparkFun-Switches" deviceset="SWITCH-SPDT" device="-PTH-11.6X4.0MM"/>
 <part name="M3" library="SparkFun-Connectors" deviceset="CONN_02" device="3.5MM"/>
 <part name="IC1" library="SparkFun-IC-Power" deviceset="V_REG_LD1117VXX" device=""/>

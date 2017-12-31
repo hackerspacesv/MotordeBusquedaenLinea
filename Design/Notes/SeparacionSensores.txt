@@ -1,0 +1,4 @@
+Notas de diseño - Arco de Sensores
+Separación sobre el arco: 0.45''
+X: 80mm
+Y: 33mm
