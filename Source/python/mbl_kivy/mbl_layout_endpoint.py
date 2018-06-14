@@ -41,8 +41,8 @@ class LayoutEndpoint(FloatLayout):
       self.boton_enable.background_color = (0.75, 0, 0, 1)
 
     #Luego se traslada el estado del boton al robot
-    registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,\
-                                          ((self.reg_habilitado, self.habilitado),))
+    registros = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,\
+                                           ((self.reg_habilitado, self.habilitado),))
 
     #Si la comunicacion no tuvo exito, fuerza el estado del boton a falso
     if not registros:
@@ -51,8 +51,8 @@ class LayoutEndpoint(FloatLayout):
   def __actualizar_seleccion(self, *args):
     #Al seleccionar el endpoint en la GUI, se lee el estado de habilitacion de la misma
     if self.seleccionado:
-      registros = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint,\
-                                            (self.reg_habilitado,))
+      registros = self.i32ctt.leer_registros(self.direccion_mac, self.endpoint,\
+                                             (self.reg_habilitado,))
       if registros and registros[0][0] == self.reg_habilitado:
         #Si se leyo el registro correctamente, se toma el valor del mismo
         self.habilitado = registros[0][1]

@@ -127,7 +127,7 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
     direcciones = map(lambda a:a.reg_act, self.layout_param)
 
     #Se efectua el proceso de lectura de los registros
-    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direcciones)
+    pares = self.i32ctt.leer_registros(self.direccion_mac, self.endpoint, direcciones)
     if pares:
       #Si hubo respuesta, se obtiene la lista de direcciones leidas
       direcciones_leidas = map(lambda a:a[0], pares)
@@ -140,7 +140,7 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
           self.layout_param[i].valor_act = round(float(datos_leidos[i]) / (1 << 24), 3)
 
     direcciones = map(lambda a:a.reg_sal, self.layout_param)
-    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direcciones)
+    pares = self.i32ctt.leer_registros(self.direccion_mac, self.endpoint, direcciones)
     if pares:
       direcciones_leidas = map(lambda a:a[0], pares)
       if direcciones_leidas == direcciones:
@@ -149,7 +149,7 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
           self.layout_param[i].valor_sal = round(float(datos_leidos[i]) / (1 << 24), 3)
 
     direccion = (self.reg_nv_slot,)
-    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direccion)
+    pares = self.i32ctt.leer_registros(self.direccion_mac, self.endpoint, direccion)
     if pares:
       direccion_leida = pares[0][0]
       if direccion_leida == direccion[0]:
@@ -159,16 +159,16 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
 
   def __boton_presionado(self, boton):
     if boton is self.boton_arranque:
-      registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
-                                            ((self.reg_comando, 1),))
+      registros = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,
+                                             ((self.reg_comando, 1),))
 
     if boton is self.boton_calibracion:
-      registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
-                                            ((self.reg_comando, 2),))
+      registros = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,
+                                             ((self.reg_comando, 2),))
 
     if boton is self.boton_paro:
-      registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
-                                            ((self.reg_comando, 0),))
+      registros = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,
+                                             ((self.reg_comando, 0),))
 
   def __parametro_seleccionado(self, parametro):
     self.prm_seleccionado = parametro
@@ -177,8 +177,8 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
     registro = parametro.reg_sal
     valor = int(parametro.valor_act * (1 << 24))
 
-    direcciones_escritas = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
-                                                     ((registro, valor),))
+    direcciones_escritas = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,
+                                                      ((registro, valor),))
     if direcciones_escritas:
       if direcciones_escritas[0] == registro:
         parametro.valor_sal = parametro.valor_act
@@ -187,8 +187,8 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
     registro = parametro.reg_act
     valor = int(parametro.valor_sal * (1 << 24))
 
-    direcciones_escritas = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
-                                                     ((registro, valor),))
+    direcciones_escritas = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,
+                                                      ((registro, valor),))
     if direcciones_escritas:
       if direcciones_escritas[0] == registro:
         parametro.valor_act = parametro.valor_sal
@@ -199,18 +199,18 @@ class LayoutEndpointAutomatico(LayoutEndpoint):
     registro = self.prm_seleccionado.reg_act
     valor = int(self.prm_seleccionado.valor_act * (1 << 24))
 
-    registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
-                                          ((registro, valor),))
+    registros = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,
+                                           ((registro, valor),))
 
   def __seleccionar_slot(self, boton):
     registro = self.reg_nv_slot
     valor = boton.num_slot
 
-    registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,
-                                          ((registro, valor),))
+    registros = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,
+                                           ((registro, valor),))
 
     direcciones = map(lambda a:a.reg_sal, self.layout_param)
-    pares = self.i32ctt.leer_registro(self.direccion_mac, self.endpoint, direcciones)
+    pares = self.i32ctt.leer_registros(self.direccion_mac, self.endpoint, direcciones)
     if pares:
       direcciones_leidas = map(lambda a:a[0], pares)
       if direcciones_leidas == direcciones:

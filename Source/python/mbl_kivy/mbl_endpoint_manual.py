@@ -32,8 +32,8 @@ class LayoutEndpointManual(LayoutEndpoint):
       #La funcion de actualizacion periodica envia los valores de los controles analogos
       x = int(self.control_horizontal.posicion_cursor * (1 << 24))
       y = int(self.control_vertical.posicion_cursor * (1 << 24))
-      registros = self.i32ctt.escr_registro(self.direccion_mac, self.endpoint,\
-                                            ((self.reg_x, x), (self.reg_y, y)))
+      registros = self.i32ctt.escr_registros(self.direccion_mac, self.endpoint,\
+                                             ((self.reg_x, x), (self.reg_y, y)))
 
 class ControlAnalogo(Widget):
   posicion_cursor = NumericProperty(0)
